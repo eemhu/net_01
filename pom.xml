@@ -29,17 +29,29 @@
   </scm>
   <properties>
     <changelist>-SNAPSHOT</changelist>
-    <java.version>1.8</java.version>
+    <java.version>25</java.version>
     <junit.platform.version>1.10.2</junit.platform.version>
     <junit.version>5.10.2</junit.version>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>25</maven.compiler.source>
+    <maven.compiler.target>25</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <revision>0.0.1</revision>
+    <teragrep.buf_01.version>1.0.0</teragrep.buf_01.version>
+    <teragrep.poj_01.version>3.0.0</teragrep.poj_01.version>
     <sha1></sha1>
   </properties>
   <dependencies>
+    <dependency>
+      <groupId>com.teragrep</groupId>
+      <artifactId>buf_01</artifactId>
+      <version>${teragrep.buf_01.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.teragrep</groupId>
+      <artifactId>poj_01</artifactId>
+      <version>${teragrep.poj_01.version}</version>
+    </dependency>
     <!-- slf4j -->
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -104,7 +116,7 @@
                   <version>3.2.5</version>
                 </requireMavenVersion>
                 <requireJavaVersion>
-                  <version>1.8</version>
+                  <version>25</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
@@ -253,7 +265,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <source>8</source>
+              <source>25</source>
             </configuration>
           </execution>
         </executions>
