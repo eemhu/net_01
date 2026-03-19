@@ -45,10 +45,13 @@
  */
 package com.teragrep.net_01.channel.buffer.writable;
 
-import com.teragrep.net_01.channel.buffer.BufferLease;
+import com.teragrep.buf_01.buffer.lease.OpenableLease;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -57,9 +60,9 @@ public final class WriteableLeaseful implements Writeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(WriteableLeaseful.class);
 
     private final Writeable writeable;
-    private final List<BufferLease> leases;
+    private final List<OpenableLease<MemorySegment>> leases;
 
-    public WriteableLeaseful(Writeable writeable, List<BufferLease> leases) {
+    public WriteableLeaseful(Writeable writeable, List<OpenableLease<MemorySegment>> leases) {
         this.writeable = writeable;
         this.leases = leases;
     }
@@ -83,11 +86,16 @@ public final class WriteableLeaseful implements Writeable {
     public void close() {
         writeable.close();
         // TODO subleases for fragments
-        for (BufferLease bufferLease : leases) {
+        for (OpenableLease<MemorySegment> bufferLease : leases) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("releasing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
             }
-            bufferLease.removeRef();
+            // FIXME: bufferLease.removeRef();
+            try {
+                bufferLease.close();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

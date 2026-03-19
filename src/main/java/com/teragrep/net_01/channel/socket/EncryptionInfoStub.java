@@ -80,7 +80,7 @@ final class EncryptionInfoStub implements EncryptionInfo {
     }
 
     @Override
-    public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
+    public Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
         throw new IllegalStateException("not encrypted");
     }
 

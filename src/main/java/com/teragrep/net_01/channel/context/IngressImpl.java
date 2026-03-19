@@ -45,14 +45,17 @@
  */
 package com.teragrep.net_01.channel.context;
 
-import com.teragrep.net_01.channel.buffer.BufferLease;
-import com.teragrep.net_01.channel.buffer.BufferLeasePool;
+import com.teragrep.buf_01.buffer.lease.OpenableLease;
+import com.teragrep.buf_01.buffer.pool.LeaseMultiGet;
+import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+import com.teragrep.poj_01.pool.Pool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tlschannel.NeedsReadException;
 import tlschannel.NeedsWriteException;
 
 import java.io.IOException;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.util.LinkedList;
@@ -68,18 +71,18 @@ final class IngressImpl implements Ingress {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(IngressImpl.class);
     private final EstablishedContextImpl establishedContext;
-    private final BufferLeasePool bufferLeasePool;
+    private final Pool<OpenableLease<MemorySegment>> memorySegmentLeasePool;
 
-    private final LinkedList<BufferLease> activeBuffers;
+    private final LinkedList<TrackedMemorySegmentLease> activeBuffers;
     private final Lock lock;
     // tls
     public final AtomicBoolean needWrite;
 
     private final List<Clock> interestedClocks;
 
-    IngressImpl(EstablishedContextImpl establishedContext, BufferLeasePool bufferLeasePool) {
+    IngressImpl(EstablishedContextImpl establishedContext, Pool<OpenableLease<MemorySegment>> memorySegmentLeasePool) {
         this.establishedContext = establishedContext;
-        this.bufferLeasePool = bufferLeasePool;
+        this.memorySegmentLeasePool = memorySegmentLeasePool;
 
         this.activeBuffers = new LinkedList<>();
         this.lock = new ReentrantLock();
@@ -109,8 +112,7 @@ final class IngressImpl implements Ingress {
                 boolean continueReading = true;
                 while (!activeBuffers.isEmpty()) {
                     // IMPORTANT: current tls implementation will skip bytes if BufferLeases are not fully consumed.
-                    BufferLease bufferLease = activeBuffers.removeFirst();
-                    bufferLease.addRef();
+                    TrackedMemorySegmentLease bufferLease = activeBuffers.removeFirst();
                     LOGGER
                             .debug(
                                     "submitting buffer <{}> from activeBuffers <{}> to relpFrame", bufferLease,
@@ -120,12 +122,6 @@ final class IngressImpl implements Ingress {
                     if (!interestedClocks.isEmpty()) {
                         for (Clock clock : interestedClocks) {
                             clock.advance(bufferLease);
-
-                            if (bufferLease.buffer().hasRemaining()) {
-                                // shared buffer between clocks, ready for another
-                                bufferLease.addRef();
-                            }
-
                         }
                     }
 
@@ -134,19 +130,19 @@ final class IngressImpl implements Ingress {
                     }
 
                     LOGGER.debug("clock returned continueReading <{}>", continueReading);
-                    if (bufferLease.buffer().hasRemaining()) {
+
+                    if (bufferLease.hasNext()) {
                         // return back as it has some remaining
                         LOGGER.debug("pushBack bufferLease id <{}>", bufferLease.id());
                         activeBuffers.push(bufferLease);
                         if (LOGGER.isDebugEnabled()) {
                             LOGGER
                                     .debug(
-                                            "buffer.buffer <{}>, buffer.buffer().hasRemaining() <{}> returned it to activeBuffers <{}>",
-                                            bufferLease.buffer(), bufferLease.buffer().hasRemaining(), activeBuffers
+                                            "buffer.leasedObject <{}>, buffer.hasNext <{}> returned it to activeBuffers <{}>",
+                                            bufferLease.leasedObject(), bufferLease.hasNext(), activeBuffers
                                     );
                         }
                     }
-                    bufferLease.removeRef();
                     if (!continueReading) {
                         break;
                     }
@@ -230,39 +226,30 @@ final class IngressImpl implements Ingress {
     }
 
     private long readData() throws IOException {
-        long readBytes = 0;
+        long readBytes;
 
-        List<BufferLease> bufferLeases = bufferLeasePool.take(4);
+        List<OpenableLease<MemorySegment>> bufferLeases = new LeaseMultiGet(memorySegmentLeasePool).get(4);
 
         List<ByteBuffer> byteBufferList = new LinkedList<>();
-        for (BufferLease bufferLease : bufferLeases) {
+        for (OpenableLease<MemorySegment> bufferLease : bufferLeases) {
             if (bufferLease.isStub()) {
                 continue;
             }
-            byteBufferList.add(bufferLease.buffer());
+            byteBufferList.add(bufferLease.leasedObject().asByteBuffer());
         }
         ByteBuffer[] byteBufferArray = byteBufferList.toArray(new ByteBuffer[0]);
 
         readBytes = establishedContext.socket().read(byteBufferArray);
+        // TODO: Figure out a way to see which buffers were written into.
+        //  Right now, buffers that are not written into are pushed into activeBuffers.
 
-        activateBuffers(bufferLeases);
+        for (final OpenableLease<MemorySegment> bufferLease : bufferLeases) {
+            activeBuffers.push(new TrackedMemorySegmentLease(bufferLease));
+        }
 
         LOGGER.debug("establishedContext.read got <{}> bytes from socket", readBytes);
 
         return readBytes;
-    }
-
-    private void activateBuffers(List<BufferLease> bufferLeases) {
-        for (BufferLease bufferLease : bufferLeases) {
-            if (bufferLease.buffer().position() != 0) {
-                bufferLease.buffer().flip();
-                activeBuffers.add(bufferLease);
-            }
-            else {
-                // unused buffer, releasing back to pool
-                bufferLease.removeRef();
-            }
-        }
     }
 
     public AtomicBoolean needWrite() {

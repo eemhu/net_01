@@ -45,7 +45,9 @@
  */
 package com.teragrep.net_01.channel.context;
 
-import com.teragrep.net_01.channel.buffer.BufferLease;
+import com.teragrep.buf_01.buffer.lease.Lease;
+
+import java.lang.foreign.MemorySegment;
 
 public interface Clock extends AutoCloseable {
 
@@ -53,5 +55,5 @@ public interface Clock extends AutoCloseable {
      * @param bufferLease to be consumed by the Clock. Clock or it's subsequent actions must close all BufferLease's it
      *                    receives otherwise encapsulated buffers are not reusable and memory allocator consumes time.
      */
-    void advance(BufferLease bufferLease);
+    void advance(Lease<MemorySegment> bufferLease);
 }

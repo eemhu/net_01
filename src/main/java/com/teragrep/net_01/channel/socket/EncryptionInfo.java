@@ -47,7 +47,6 @@ package com.teragrep.net_01.channel.socket;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
-import javax.security.cert.X509Certificate;
 import java.security.Principal;
 import java.security.cert.Certificate;
 
@@ -86,11 +85,11 @@ public interface EncryptionInfo {
 
     /**
      * throws IllegalStateException if isEncrypted returns false
-     * 
-     * @return see {@link SSLSession#getPeerCertificateChain()}
+     *
+     * @return see {@link SSLSession#getPeerCertificates()}
      * @throws SSLPeerUnverifiedException
      */
-    X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException;
+    Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException;
 
     /**
      * throws IllegalStateException if isEncrypted returns false
