@@ -57,7 +57,7 @@ public final class ServerTest {
     }
 
     @Test
-    void testReceivingOneMessage() {
+    void testReceivingOneChar() {
         this.countDownLatch = new CountDownLatch(1);
         final java.net.Socket clientSocket = Assertions.assertDoesNotThrow(() -> new java.net.Socket("localhost", 9090));
 
@@ -70,6 +70,30 @@ public final class ServerTest {
         Assertions.assertDoesNotThrow(() -> countDownLatch.await());
 
         Assertions.assertEquals(List.of((byte) 'a'), messages.getFirst());
+
+        Assertions.assertDoesNotThrow(in::close);
+        Assertions.assertDoesNotThrow(out::close);
+        Assertions.assertDoesNotThrow(clientSocket::close);
+    }
+
+    @Test
+    void testReceivingThreeChars() {
+        this.countDownLatch = new CountDownLatch(1);
+        final java.net.Socket clientSocket = Assertions.assertDoesNotThrow(() -> new java.net.Socket("localhost", 9090));
+
+        final PrintWriter out = new PrintWriter(Assertions.assertDoesNotThrow(clientSocket::getOutputStream), true);
+        final BufferedReader in = new BufferedReader(new InputStreamReader(Assertions.assertDoesNotThrow(clientSocket::getInputStream)));
+
+        out.print("a");
+        out.flush();
+        out.print("b");
+        out.flush();
+        out.print("c");
+        out.flush();
+
+        Assertions.assertDoesNotThrow(() -> countDownLatch.await());
+
+        Assertions.assertEquals(List.of((byte) 'a', (byte) 'b', (byte) 'c'), messages.getFirst());
 
         Assertions.assertDoesNotThrow(in::close);
         Assertions.assertDoesNotThrow(out::close);
