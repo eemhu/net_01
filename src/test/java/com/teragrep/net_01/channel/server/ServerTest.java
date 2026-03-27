@@ -15,20 +15,24 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicLong;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public final class ServerTest {
     private Server server;
+    private CountDownLatch countDownLatch;
     private final List<List<Byte>> messages = new ArrayList<>();
+
     @BeforeAll
     void beforeAll() {
         final EventLoopFactory eventLoopFactory = new EventLoopFactory();
         final SocketFactory socketFactory = new PlainFactory();
-        final ClockFactory clockFactory = new ClockFactoryFake(messages::add);
+        final ClockFactory clockFactory = new ClockFactoryFake((msg -> {
+            messages.add(msg);
+            countDownLatch.countDown();
+        }));
 
         final EventLoop el = Assertions.assertDoesNotThrow(eventLoopFactory::create);
 
@@ -53,7 +57,8 @@ public final class ServerTest {
     }
 
     @Test
-    void test() throws Exception{
+    void testReceivingOneMessage() {
+        this.countDownLatch = new CountDownLatch(1);
         final java.net.Socket clientSocket = Assertions.assertDoesNotThrow(() -> new java.net.Socket("localhost", 9090));
 
         final PrintWriter out = new PrintWriter(Assertions.assertDoesNotThrow(clientSocket::getOutputStream), true);
@@ -62,7 +67,7 @@ public final class ServerTest {
         out.print("a");
         out.flush();
 
-        Thread.sleep(500);
+        Assertions.assertDoesNotThrow(() -> countDownLatch.await());
 
         Assertions.assertEquals(List.of((byte) 'a'), messages.getFirst());
 
