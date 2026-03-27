@@ -19,14 +19,14 @@ public final class SocketTest {
     void testPlainSocketConnection() {
         Assertions.assertDoesNotThrow(() -> {
             // Create ServerSocketChannel and bind it to port=9090
-            ServerSocketChannel socketCh = ServerSocketChannel.open();
+            final ServerSocketChannel socketCh = ServerSocketChannel.open();
             socketCh.bind(new InetSocketAddress(9090));
 
             // Init client
-            java.net.Socket clientSocket = new java.net.Socket("localhost", 9090);
+            final java.net.Socket clientSocket = new java.net.Socket("localhost", 9090);
 
             // Init PlainSocket
-            Socket socket = new PlainSocket(socketCh.accept());
+            final Socket socket = new PlainSocket(socketCh.accept());
 
             clientSocket.close();
             socketCh.close();
@@ -38,15 +38,15 @@ public final class SocketTest {
     void testPlainSocketWrite() {
         Assertions.assertDoesNotThrow(() -> {
             // Create ServerSocketChannel and bind it to port=9090
-            ServerSocketChannel socketCh = ServerSocketChannel.open();
+            final ServerSocketChannel socketCh = ServerSocketChannel.open();
             socketCh.bind(new InetSocketAddress(9090));
 
             // Init client
-            java.net.Socket clientSocket = new java.net.Socket("localhost", 9090);
+            final java.net.Socket clientSocket = new java.net.Socket("localhost", 9090);
             final BufferedReader in = new BufferedReader(new InputStreamReader(Assertions.assertDoesNotThrow(clientSocket::getInputStream)));
 
             // Init PlainSocket
-            Socket socket = new PlainSocket(socketCh.accept());
+            final Socket socket = new PlainSocket(socketCh.accept());
 
             socket.write(stringToBuffer("helloWorld\n"));
 
