@@ -45,6 +45,7 @@
  */
 package com.teragrep.net_01.channel.context;
 
+import com.teragrep.buf_01.buffer.lease.MemorySegmentLease;
 import com.teragrep.buf_01.buffer.lease.OpenableLease;
 import com.teragrep.buf_01.buffer.pool.LeaseMultiGet;
 import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
@@ -58,9 +59,12 @@ import java.io.IOException;
 import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -73,7 +77,7 @@ final class IngressImpl implements Ingress {
     private final EstablishedContextImpl establishedContext;
     private final Pool<OpenableLease<MemorySegment>> memorySegmentLeasePool;
 
-    private final LinkedList<TrackedMemorySegmentLease> activeBuffers;
+    private final List<TrackedMemorySegmentLease> activeBuffers;
     private final Lock lock;
     // tls
     public final AtomicBoolean needWrite;
@@ -84,11 +88,11 @@ final class IngressImpl implements Ingress {
         this.establishedContext = establishedContext;
         this.memorySegmentLeasePool = memorySegmentLeasePool;
 
-        this.activeBuffers = new LinkedList<>();
+        this.activeBuffers = Collections.synchronizedList(new LinkedList<>());
         this.lock = new ReentrantLock();
         this.needWrite = new AtomicBoolean();
 
-        this.interestedClocks = new LinkedList<>();
+        this.interestedClocks = Collections.synchronizedList(new LinkedList<>());
     }
 
     @Override
@@ -106,10 +110,12 @@ final class IngressImpl implements Ingress {
                 long readBytes = readData();
 
                 if (!isDataAvailable(readBytes)) {
+                    System.out.println("No data available");
                     break;
                 }
 
                 boolean continueReading = true;
+                System.out.println("activeBuffers.isEmpty=" + activeBuffers.isEmpty());
                 while (!activeBuffers.isEmpty()) {
                     // IMPORTANT: current tls implementation will skip bytes if BufferLeases are not fully consumed.
                     TrackedMemorySegmentLease bufferLease = activeBuffers.removeFirst();
@@ -133,8 +139,9 @@ final class IngressImpl implements Ingress {
 
                     if (bufferLease.hasNext()) {
                         // return back as it has some remaining
+                        System.out.println("something remaining");
                         LOGGER.debug("pushBack bufferLease id <{}>", bufferLease.id());
-                        activeBuffers.push(bufferLease);
+                        activeBuffers.add(bufferLease);
                         if (LOGGER.isDebugEnabled()) {
                             LOGGER
                                     .debug(
@@ -240,12 +247,24 @@ final class IngressImpl implements Ingress {
         ByteBuffer[] byteBufferArray = byteBufferList.toArray(new ByteBuffer[0]);
 
         readBytes = establishedContext.socket().read(byteBufferArray);
-        // TODO: Figure out a way to see which buffers were written into.
-        //  Right now, buffers that are not written into are pushed into activeBuffers.
+        System.out.println("readBytes = " + readBytes);
+            long bytesLeft = readBytes;
+            boolean allRead = false;
+            for (final OpenableLease<MemorySegment> bufferLease : bufferLeases) {
+                final long byteSize = bufferLease.leasedObject().byteSize();
 
-        for (final OpenableLease<MemorySegment> bufferLease : bufferLeases) {
-            activeBuffers.push(new TrackedMemorySegmentLease(bufferLease));
-        }
+                if (!allRead) {
+                    activeBuffers.add(new TrackedMemorySegmentLease(bufferLease, new AtomicLong(Math.min(bytesLeft, byteSize))));
+                }
+
+                bytesLeft -= byteSize;
+
+                if (bytesLeft <= 0) {
+                    allRead = true;
+                }
+            }
+
+        System.out.println("buffers.size=" + activeBuffers.size());
 
         LOGGER.debug("establishedContext.read got <{}> bytes from socket", readBytes);
 

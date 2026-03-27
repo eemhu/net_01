@@ -87,11 +87,13 @@ public final class EventLoop implements AutoCloseable, Runnable {
      * @param context to register
      */
     public void register(Context context) {
+        LOGGER.info("EventLoop.Register: {}", context);
         pendingContextRegistrations.add(context);
         wakeup();
     }
 
     private void registerPendingRegistrations() {
+        LOGGER.info("register pending regs");
         while (true) {
             Context context = pendingContextRegistrations.poll();
             if (context != null) {
@@ -120,10 +122,10 @@ public final class EventLoop implements AutoCloseable, Runnable {
 
         registerPendingRegistrations();
 
-        LOGGER.debug("readyKeys <{}>", readyKeys);
+        LOGGER.info("readyKeys <{}>", readyKeys);
 
         Set<SelectionKey> selectionKeys = selector.selectedKeys();
-        LOGGER.debug("selectionKeys <{}> ", selectionKeys);
+        LOGGER.info("selectionKeys <{}> ", selectionKeys);
         for (SelectionKey selectionKey : selectionKeys) {
             try {
                 if (LOGGER.isDebugEnabled()) {
@@ -193,8 +195,9 @@ public final class EventLoop implements AutoCloseable, Runnable {
     @Override
     public void run() {
         try {
-            LOGGER.debug("Started");
+            LOGGER.info("Started");
             while (!stop.get()) {
+                System.out.println("polling " + Thread.currentThread().getName());
                 poll();
             }
         }
@@ -204,7 +207,7 @@ public final class EventLoop implements AutoCloseable, Runnable {
         finally {
             close();
         }
-        LOGGER.debug("Stopped");
+        LOGGER.info("Stopped");
     }
 
     public void stop() {
