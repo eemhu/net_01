@@ -51,8 +51,8 @@ public final class ServerTest {
         Assertions.assertDoesNotThrow(this.server::close);
     }
 
-    @BeforeEach
-    void beforeEach() {
+    @AfterEach
+    void afterEach() {
         messages.clear();
     }
 
