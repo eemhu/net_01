@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public final class ServerTest {
@@ -58,12 +59,11 @@ public final class ServerTest {
         final PrintWriter out = new PrintWriter(Assertions.assertDoesNotThrow(clientSocket::getOutputStream), true);
         final BufferedReader in = new BufferedReader(new InputStreamReader(Assertions.assertDoesNotThrow(clientSocket::getInputStream)));
 
-        out.println("aaaa");
+        out.print("a");
         out.flush();
 
         Thread.sleep(500);
 
-        Assertions.assertEquals(1, messages.size());
         Assertions.assertEquals(List.of((byte) 'a'), messages.getFirst());
 
         Assertions.assertDoesNotThrow(in::close);

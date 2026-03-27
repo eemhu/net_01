@@ -21,8 +21,6 @@ public final class ClockFake implements Clock {
         System.out.println("advancing clock @" + Thread.currentThread().getName());
         System.out.println("pos=" + lease.position());
 
-        System.out.println(lease.leasedObject().get(ValueLayout.JAVA_BYTE, 0));
-
         final List<Byte> bytes = new ArrayList<>();
         while (lease.hasNext()) {
             final byte b = lease.next();

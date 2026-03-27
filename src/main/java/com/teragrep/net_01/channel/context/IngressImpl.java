@@ -254,7 +254,8 @@ final class IngressImpl implements Ingress {
                 final long byteSize = bufferLease.leasedObject().byteSize();
 
                 if (!allRead) {
-                    activeBuffers.add(new TrackedMemorySegmentLease(bufferLease, new AtomicLong(Math.min(bytesLeft, byteSize))));
+                    // same as ByteBuffer.flip()
+                    activeBuffers.add(new TrackedMemorySegmentLease(bufferLease));
                 }
 
                 bytesLeft -= byteSize;
