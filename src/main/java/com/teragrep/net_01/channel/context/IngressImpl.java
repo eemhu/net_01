@@ -253,9 +253,19 @@ final class IngressImpl implements Ingress {
             for (final OpenableLease<MemorySegment> bufferLease : bufferLeases) {
                 final long byteSize = bufferLease.leasedObject().byteSize();
 
-                if (!allRead) {
+                if (!allRead && readBytes > 0) {
                     // same as ByteBuffer.flip()
-                    activeBuffers.add(new TrackedMemorySegmentLease(bufferLease));
+                    final long diff = bytesLeft - byteSize;
+                    if (diff < 0) {
+                        // mem.segment bigger than bytes left.
+                        // set limit to read amount.
+                        final long limit = byteSize - Math.abs(diff);
+                        activeBuffers.add(new TrackedMemorySegmentLease(bufferLease, new AtomicLong(0L), new AtomicLong(limit)));
+                    }
+                    else {
+                        //else: full mem.segment used, no need to set limit.
+                        activeBuffers.add(new TrackedMemorySegmentLease(bufferLease));
+                    }
                 }
 
                 bytesLeft -= byteSize;

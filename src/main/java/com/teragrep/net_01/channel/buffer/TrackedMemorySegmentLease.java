@@ -10,14 +10,20 @@ import java.util.concurrent.atomic.AtomicLong;
 public class TrackedMemorySegmentLease implements Lease<MemorySegment>, Iterator<Byte> {
     private final Lease<MemorySegment> origin;
     private final AtomicLong currentOffset;
+    private final AtomicLong limit;
 
     public TrackedMemorySegmentLease(final Lease<MemorySegment> origin) {
         this(origin, new AtomicLong(0L));
     }
 
     public TrackedMemorySegmentLease(final Lease<MemorySegment> origin, final AtomicLong currentOffset) {
+        this(origin, currentOffset, new AtomicLong(-1L));
+    }
+
+    public TrackedMemorySegmentLease(final Lease<MemorySegment> origin, final AtomicLong currentOffset, final AtomicLong limit) {
         this.origin = origin;
         this.currentOffset = currentOffset;
+        this.limit = limit;
     }
 
     @Override
@@ -57,13 +63,21 @@ public class TrackedMemorySegmentLease implements Lease<MemorySegment>, Iterator
 
     @Override
     public boolean hasNext() {
-        return currentOffset.get() < origin.leasedObject().byteSize();
+        final boolean rv;
+        if (limit.get() == -1) {
+            // limit not set, ignore
+            rv = currentOffset.get() < origin.leasedObject().byteSize();
+        }
+        else {
+            rv = currentOffset.get() < Math.min(limit.get(), origin.leasedObject().byteSize());
+        }
+        return rv;
     }
 
     @Override
     public Byte next() {
         if (!hasNext()) {
-            throw new IndexOutOfBoundsException("Reached end of segment, cannot provide next byte");
+            throw new IndexOutOfBoundsException("Reached end of segment or limit, cannot provide next byte");
         }
         final long nextIndex = currentOffset.getAndIncrement();
 
@@ -72,5 +86,9 @@ public class TrackedMemorySegmentLease implements Lease<MemorySegment>, Iterator
 
     public long position() {
         return currentOffset.get();
+    }
+
+    public long limit() {
+        return limit.get();
     }
 }
