@@ -1,7 +1,7 @@
 package com.teragrep.net_01.channel.server;
 
 import com.teragrep.net_01.channel.context.ClockFactory;
-import com.teragrep.net_01.channel.context.ClockFactoryFake;
+import com.teragrep.net_01.channel.context.ConsumingClockFactory;
 import com.teragrep.net_01.channel.socket.PlainFactory;
 import com.teragrep.net_01.channel.socket.SocketFactory;
 import com.teragrep.net_01.eventloop.EventLoop;
@@ -28,7 +28,7 @@ public final class ServerTest {
     void beforeAll() {
         final EventLoopFactory eventLoopFactory = new EventLoopFactory();
         final SocketFactory socketFactory = new PlainFactory();
-        final ClockFactory clockFactory = new ClockFactoryFake((msg -> {
+        final ClockFactory clockFactory = new ConsumingClockFactory((msg -> {
             messages.add(msg);
             countDownLatch.countDown();
         }));
@@ -93,6 +93,36 @@ public final class ServerTest {
         Assertions.assertDoesNotThrow(() -> countDownLatch.await());
 
         Assertions.assertEquals(List.of((byte) 'a', (byte) 'b', (byte) 'c'), messages.getFirst());
+
+        Assertions.assertDoesNotThrow(in::close);
+        Assertions.assertDoesNotThrow(out::close);
+        Assertions.assertDoesNotThrow(clientSocket::close);
+    }
+
+    @Test
+    void testSending() {
+        this.countDownLatch = new CountDownLatch(1);
+        final java.net.Socket clientSocket = Assertions.assertDoesNotThrow(() -> new java.net.Socket("localhost", 9090));
+
+        final PrintWriter out = new PrintWriter(Assertions.assertDoesNotThrow(clientSocket::getOutputStream), true);
+        final BufferedReader in = new BufferedReader(new InputStreamReader(Assertions.assertDoesNotThrow(clientSocket::getInputStream)));
+
+        out.print("a");
+        out.flush();
+        out.print("b");
+        out.flush();
+        out.print("c");
+        out.flush();
+
+        Assertions.assertDoesNotThrow(() -> countDownLatch.await());
+
+        Assertions.assertEquals(List.of((byte) 'a', (byte) 'b', (byte) 'c'), messages.getFirst());
+
+        String x;
+        while ((x = Assertions.assertDoesNotThrow(in::readLine)) != null){
+            System.out.println("resp: " + x);
+        }
+
 
         Assertions.assertDoesNotThrow(in::close);
         Assertions.assertDoesNotThrow(out::close);
