@@ -3,7 +3,6 @@ package com.teragrep.net_01.channel.server;
 import com.teragrep.net_01.channel.context.ClockFactory;
 import com.teragrep.net_01.channel.context.ClockFactoryFake;
 import com.teragrep.net_01.channel.socket.PlainFactory;
-import com.teragrep.net_01.channel.socket.Socket;
 import com.teragrep.net_01.channel.socket.SocketFactory;
 import com.teragrep.net_01.eventloop.EventLoop;
 import com.teragrep.net_01.eventloop.EventLoopFactory;
