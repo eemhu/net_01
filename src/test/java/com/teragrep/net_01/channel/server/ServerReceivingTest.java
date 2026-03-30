@@ -19,7 +19,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public final class ServerTest {
+public final class ServerReceivingTest {
     private Server server;
     private CountDownLatch countDownLatch;
     private final List<List<Byte>> messages = new ArrayList<>();
@@ -93,36 +93,6 @@ public final class ServerTest {
         Assertions.assertDoesNotThrow(() -> countDownLatch.await());
 
         Assertions.assertEquals(List.of((byte) 'a', (byte) 'b', (byte) 'c'), messages.getFirst());
-
-        Assertions.assertDoesNotThrow(in::close);
-        Assertions.assertDoesNotThrow(out::close);
-        Assertions.assertDoesNotThrow(clientSocket::close);
-    }
-
-    @Test
-    void testSending() {
-        this.countDownLatch = new CountDownLatch(1);
-        final java.net.Socket clientSocket = Assertions.assertDoesNotThrow(() -> new java.net.Socket("localhost", 9090));
-
-        final PrintWriter out = new PrintWriter(Assertions.assertDoesNotThrow(clientSocket::getOutputStream), true);
-        final BufferedReader in = new BufferedReader(new InputStreamReader(Assertions.assertDoesNotThrow(clientSocket::getInputStream)));
-
-        out.print("a");
-        out.flush();
-        out.print("b");
-        out.flush();
-        out.print("c");
-        out.flush();
-
-        Assertions.assertDoesNotThrow(() -> countDownLatch.await());
-
-        Assertions.assertEquals(List.of((byte) 'a', (byte) 'b', (byte) 'c'), messages.getFirst());
-
-        String x;
-        while ((x = Assertions.assertDoesNotThrow(in::readLine)) != null){
-            System.out.println("resp: " + x);
-        }
-
 
         Assertions.assertDoesNotThrow(in::close);
         Assertions.assertDoesNotThrow(out::close);
