@@ -1,36 +1,38 @@
 package com.teragrep.net_01.channel.context;
 
+import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
 import com.teragrep.net_01.channel.buffer.writable.Writeable;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 public final class StringWriteable implements Writeable {
-    private final ByteBuffer[] buffers;
+    private final List<TrackedMemorySegmentLease> buffers;
 
-    public StringWriteable(final String str) {
-        this(new ByteBuffer[]{ByteBuffer.wrap(str.getBytes(StandardCharsets.UTF_8))});
-    }
-
-    public StringWriteable(final ByteBuffer[] buffers) {
+    public StringWriteable(final List<TrackedMemorySegmentLease> buffers) {
         this.buffers = buffers;
     }
 
     @Override
     public void close() {
-        // no-op
+        for (TrackedMemorySegmentLease buf : buffers) {
+            try {
+                buf.close();
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @Override
-    public ByteBuffer[] buffers() {
+    public List<TrackedMemorySegmentLease> memorySegmentLeases() {
         return buffers;
     }
 
     @Override
     public boolean hasRemaining() {
         boolean rv = false;
-        for (final ByteBuffer buffer : buffers) {
-            if (buffer.hasRemaining()) {
+        for (final TrackedMemorySegmentLease buffer : buffers) {
+            if (buffer.hasNext()) {
                 rv = true;
                 break;
             }

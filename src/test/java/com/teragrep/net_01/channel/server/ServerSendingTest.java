@@ -1,5 +1,8 @@
 package com.teragrep.net_01.channel.server;
 
+import com.teragrep.buf_01.buffer.lease.MemorySegmentLeaseStub;
+import com.teragrep.buf_01.buffer.pool.OpeningPool;
+import com.teragrep.buf_01.buffer.supply.ArenaMemorySegmentLeaseSupplier;
 import com.teragrep.net_01.channel.context.ClockFactory;
 import com.teragrep.net_01.channel.context.ConsumingClockFactory;
 import com.teragrep.net_01.channel.context.SendingClockFactory;
@@ -9,11 +12,13 @@ import com.teragrep.net_01.eventloop.EventLoop;
 import com.teragrep.net_01.eventloop.EventLoopFactory;
 import com.teragrep.net_01.server.Server;
 import com.teragrep.net_01.server.ServerFactory;
+import com.teragrep.poj_01.pool.UnboundPool;
 import org.junit.jupiter.api.*;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.lang.foreign.Arena;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -23,11 +28,13 @@ import java.util.concurrent.Executors;
 public final class ServerSendingTest {
     private Server server;
     private CountDownLatch countDownLatch;
+    private OpeningPool pool;
     @BeforeAll
     void beforeAll() {
         final EventLoopFactory eventLoopFactory = new EventLoopFactory();
         final SocketFactory socketFactory = new PlainFactory();
-        final ClockFactory clockFactory = new SendingClockFactory((msgStr) -> countDownLatch.countDown());
+        this.pool = new OpeningPool(new UnboundPool<>(new ArenaMemorySegmentLeaseSupplier(Arena.ofShared(), 128), new MemorySegmentLeaseStub()));
+        final ClockFactory clockFactory = new SendingClockFactory((msgStr) -> countDownLatch.countDown(), pool);
 
         final EventLoop el = Assertions.assertDoesNotThrow(eventLoopFactory::create);
 
@@ -44,6 +51,7 @@ public final class ServerSendingTest {
     @AfterAll
     void afterAll() {
         Assertions.assertDoesNotThrow(this.server::close);
+        Assertions.assertDoesNotThrow(this.pool::close);
     }
 
     @Test

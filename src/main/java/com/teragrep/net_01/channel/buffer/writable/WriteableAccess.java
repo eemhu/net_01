@@ -45,10 +45,12 @@
  */
 package com.teragrep.net_01.channel.buffer.writable;
 
+import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
 import com.teragrep.net_01.channel.buffer.access.Access;
 import com.teragrep.net_01.channel.buffer.access.Lease;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 
 public final class WriteableAccess implements Writeable {
 
@@ -61,10 +63,10 @@ public final class WriteableAccess implements Writeable {
     }
 
     @Override
-    public ByteBuffer[] buffers() {
+    public List<TrackedMemorySegmentLease> memorySegmentLeases() {
         // FIXME just not right
         try (Lease ignored = access.get()) {
-            return writeable.buffers();
+            return writeable.memorySegmentLeases();
         }
     }
 

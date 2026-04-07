@@ -45,11 +45,13 @@
  */
 package com.teragrep.net_01.channel.buffer.writable;
 
+import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
 import com.teragrep.net_01.channel.context.EstablishedContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * Closes a connection at close()
@@ -81,8 +83,8 @@ public final class WriteableClosure implements Writeable {
     }
 
     @Override
-    public ByteBuffer[] buffers() {
-        return writeable.buffers();
+    public List<TrackedMemorySegmentLease> memorySegmentLeases() {
+        return writeable.memorySegmentLeases();
     }
 
     @Override

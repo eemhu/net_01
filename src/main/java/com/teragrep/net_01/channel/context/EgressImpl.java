@@ -45,8 +45,11 @@
  */
 package com.teragrep.net_01.channel.context;
 
+import com.teragrep.buf_01.buffer.lease.OpenableLease;
+import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
 import com.teragrep.net_01.channel.buffer.writable.Writeable;
 import com.teragrep.net_01.channel.buffer.writable.WriteableStub;
+import com.teragrep.net_01.channel.socket.WrittenResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tlschannel.NeedsReadException;
@@ -54,13 +57,16 @@ import tlschannel.NeedsWriteException;
 
 import java.io.IOException;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -169,17 +175,17 @@ final class EgressImpl implements Egress {
             Iterator<Writeable> toWriteIterator = toWriteList.iterator();
             while (toWriteIterator.hasNext()) {
                 Writeable w = toWriteIterator.next();
-                numberOfBuffers += w.buffers().length;
+                numberOfBuffers += w.memorySegmentLeases().size();
             }
 
-            ByteBuffer[] writeBuffers = new ByteBuffer[numberOfBuffers];
+            TrackedMemorySegmentLease[] writeBuffers = new TrackedMemorySegmentLease[numberOfBuffers];
             int writeBuffersIndex = 0;
 
             Iterator<Writeable> toWriteIterator2 = toWriteList.iterator();
             while (toWriteIterator2.hasNext()) {
                 Writeable w = toWriteIterator2.next();
 
-                for (ByteBuffer buffer : w.buffers()) {
+                for (TrackedMemorySegmentLease buffer : w.memorySegmentLeases()) {
                     writeBuffers[writeBuffersIndex] = buffer;
                     writeBuffersIndex++;
                 }
@@ -188,7 +194,8 @@ final class EgressImpl implements Egress {
                 writeInProgressList.add(w);
             }
 
-            establishedContext.socket().write(writeBuffers);
+
+            final WrittenResult result = establishedContext.socket().write(writeBuffers);
 
             // remove written ones
             Iterator<Writeable> writeableIterator = writeInProgressList.iterator();

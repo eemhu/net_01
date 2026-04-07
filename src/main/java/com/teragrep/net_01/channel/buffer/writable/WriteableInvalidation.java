@@ -45,11 +45,14 @@
  */
 package com.teragrep.net_01.channel.buffer.writable;
 
+import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+
 import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * Decoration of {@link Writeable} Invalidates a writable so that {@link ByteBuffer}s returned from
- * {@link Writeable#buffers()} have position and limit set to zero. Because ByteBuffer can not be Decorated directly
+ * {@link Writeable#memorySegmentLeases()} have position and limit set to zero. Because ByteBuffer can not be Decorated directly
  * this is only viable alternative to best-effort invalidate access to it.
  */
 public final class WriteableInvalidation implements Writeable {
@@ -62,15 +65,19 @@ public final class WriteableInvalidation implements Writeable {
 
     @Override
     public void close() {
-        for (ByteBuffer byteBuffer : buffers()) {
-            byteBuffer.limit(0);
+        for (final TrackedMemorySegmentLease lease : memorySegmentLeases()) {
+            try {
+                lease.close();
+            } catch (final Exception e) {
+                throw new RuntimeException("Error occurred whilst closing lease", e);
+            }
         }
         writeable.close();
     }
 
     @Override
-    public ByteBuffer[] buffers() {
-        return writeable.buffers();
+    public List<TrackedMemorySegmentLease> memorySegmentLeases() {
+        return writeable.memorySegmentLeases();
     }
 
     @Override

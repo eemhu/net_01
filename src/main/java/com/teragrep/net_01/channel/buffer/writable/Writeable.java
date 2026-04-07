@@ -45,15 +45,17 @@
  */
 package com.teragrep.net_01.channel.buffer.writable;
 
+import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+
 import java.io.Closeable;
-import java.nio.ByteBuffer;
+import java.util.List;
 
 public interface Writeable extends Closeable {
 
     @Override
     void close();
 
-    ByteBuffer[] buffers();
+    List<TrackedMemorySegmentLease> memorySegmentLeases();
 
     boolean hasRemaining();
 

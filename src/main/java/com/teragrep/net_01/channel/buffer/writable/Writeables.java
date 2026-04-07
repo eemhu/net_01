@@ -45,7 +45,11 @@
  */
 package com.teragrep.net_01.channel.buffer.writable;
 
+import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class Writeables implements Writeable {
 
@@ -56,10 +60,10 @@ public final class Writeables implements Writeable {
     }
 
     @Override
-    public ByteBuffer[] buffers() {
+    public List<TrackedMemorySegmentLease> memorySegmentLeases() {
         long totalBuffers = 0;
         for (Writeable writeable : writeables) {
-            totalBuffers = totalBuffers + writeable.buffers().length;
+            totalBuffers = totalBuffers + writeable.memorySegmentLeases().size();
         }
 
         if (totalBuffers > Integer.MAX_VALUE) {
@@ -68,12 +72,9 @@ public final class Writeables implements Writeable {
             );
         }
 
-        ByteBuffer[] bufferArray = new ByteBuffer[(int) totalBuffers];
-        int written = 0;
+        List<TrackedMemorySegmentLease> bufferArray = new ArrayList<>((int) totalBuffers);
         for (final Writeable writeable : writeables) {
-            int bufferLength = writeable.buffers().length;
-            System.arraycopy(writeable.buffers(), 0, bufferArray, written, bufferLength);
-            written += bufferLength;
+            bufferArray.addAll(writeable.memorySegmentLeases());
         }
 
         return bufferArray;

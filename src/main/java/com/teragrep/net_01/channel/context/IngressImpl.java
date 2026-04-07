@@ -49,6 +49,7 @@ import com.teragrep.buf_01.buffer.lease.MemorySegmentLease;
 import com.teragrep.buf_01.buffer.lease.OpenableLease;
 import com.teragrep.buf_01.buffer.pool.LeaseMultiGet;
 import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+import com.teragrep.net_01.channel.socket.ReadResult;
 import com.teragrep.poj_01.pool.Pool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -237,49 +238,22 @@ final class IngressImpl implements Ingress {
 
         List<OpenableLease<MemorySegment>> bufferLeases = new LeaseMultiGet(memorySegmentLeasePool).get(4);
 
-        List<ByteBuffer> byteBufferList = new LinkedList<>();
+        List<TrackedMemorySegmentLease> trackedMemorySegmentLeases = new LinkedList<>();
         for (OpenableLease<MemorySegment> bufferLease : bufferLeases) {
             if (bufferLease.isStub()) {
                 continue;
             }
-            byteBufferList.add(bufferLease.leasedObject().asByteBuffer());
+            trackedMemorySegmentLeases.add(new TrackedMemorySegmentLease(bufferLease));
         }
-        ByteBuffer[] byteBufferArray = byteBufferList.toArray(new ByteBuffer[0]);
 
-        readBytes = establishedContext.socket().read(byteBufferArray);
-        System.out.println("readBytes = " + readBytes);
-            long bytesLeft = readBytes;
-            boolean allRead = false;
-            for (final OpenableLease<MemorySegment> bufferLease : bufferLeases) {
-                final long byteSize = bufferLease.leasedObject().byteSize();
+        final ReadResult result = establishedContext.socket().read(trackedMemorySegmentLeases);
 
-                if (!allRead && readBytes > 0) {
-                    // same as ByteBuffer.flip()
-                    final long diff = bytesLeft - byteSize;
-                    if (diff < 0) {
-                        // mem.segment bigger than bytes left.
-                        // set limit to read amount.
-                        final long limit = byteSize - Math.abs(diff);
-                        activeBuffers.add(new TrackedMemorySegmentLease(bufferLease, new AtomicLong(0L), new AtomicLong(limit)));
-                    }
-                    else {
-                        //else: full mem.segment used, no need to set limit.
-                        activeBuffers.add(new TrackedMemorySegmentLease(bufferLease));
-                    }
-                }
-
-                bytesLeft -= byteSize;
-
-                if (bytesLeft <= 0) {
-                    allRead = true;
-                }
-            }
-
+        activeBuffers.addAll(result.leases());
         System.out.println("buffers.size=" + activeBuffers.size());
 
-        LOGGER.debug("establishedContext.read got <{}> bytes from socket", readBytes);
+        LOGGER.debug("establishedContext.read got <{}> bytes from socket", result.bytes());
 
-        return readBytes;
+        return result.bytes();
     }
 
     public AtomicBoolean needWrite() {

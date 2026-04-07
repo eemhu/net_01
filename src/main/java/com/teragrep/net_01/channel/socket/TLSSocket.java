@@ -45,11 +45,13 @@
  */
 package com.teragrep.net_01.channel.socket;
 
+import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
 import tlschannel.TlsChannel;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.List;
 
 final class TLSSocket implements Socket {
 
@@ -65,13 +67,15 @@ final class TLSSocket implements Socket {
     }
 
     @Override
-    public long read(ByteBuffer[] dsts) throws IOException {
-        return tlsChannel.read(dsts);
+    public ReadResult read(List<TrackedMemorySegmentLease> dsts) throws IOException {
+        throw new UnsupportedOperationException();
+        //return tlsChannel.read(dsts);
     }
 
     @Override
-    public long write(ByteBuffer[] dsts) throws IOException {
-        return tlsChannel.write(dsts);
+    public WrittenResult write(List<TrackedMemorySegmentLease> dsts) throws IOException {
+        throw new UnsupportedOperationException();
+        //return tlsChannel.write(dsts);
     }
 
     @Override

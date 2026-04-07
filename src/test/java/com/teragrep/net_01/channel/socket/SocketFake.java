@@ -45,8 +45,12 @@
  */
 package com.teragrep.net_01.channel.socket;
 
+import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.Collections;
+import java.util.List;
 
 public class SocketFake implements Socket {
 
@@ -57,13 +61,13 @@ public class SocketFake implements Socket {
     }
 
     @Override
-    public long read(ByteBuffer[] dsts) {
-        return 0;
+    public ReadResult read(List<TrackedMemorySegmentLease> dsts) {
+        return new ReadResult(0, Collections.emptyList());
     }
 
     @Override
-    public long write(ByteBuffer[] dsts) {
-        return 0;
+    public WrittenResult write(List<TrackedMemorySegmentLease> dsts) {
+        return new WrittenResult(0, Collections.emptyList());
     }
 
     @Override
