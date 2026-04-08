@@ -45,16 +45,12 @@
  */
 package com.teragrep.net_01.channel.socket;
 
-import com.teragrep.buf_01.buffer.lease.OpenableLease;
 import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
 
 import java.io.IOException;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -107,16 +103,16 @@ final class PlainSocket implements Socket {
         }
 
         //rv.forEach(l -> {
-            System.out.println("Lease:");
-            /*for (long i = 0 ; i < l.leasedObject().byteSize(); i++) {
-                System.out.printf("%s", (char)l.leasedObject().get(ValueLayout.JAVA_BYTE, i));
-            }*/
+        System.out.println("Lease:");
+        /*for (long i = 0 ; i < l.leasedObject().byteSize(); i++) {
+            System.out.printf("%s", (char)l.leasedObject().get(ValueLayout.JAVA_BYTE, i));
+        }*/
 
-           /* while (l.hasNext()) {
-                System.out.printf("%s", (char)l.next().byteValue());
-            }
-
-            System.out.println();*/
+        /* while (l.hasNext()) {
+             System.out.printf("%s", (char)l.next().byteValue());
+         }
+        
+         System.out.println();*/
         //});
         return new ReadResult(readBytes, rv);
     }
@@ -145,11 +141,15 @@ final class PlainSocket implements Socket {
                     // mem.segment bigger than bytes left.
                     // set limit to written amount.
                     final long limit = byteSize - Math.abs(diff);
-                    rv.add(new TrackedMemorySegmentLease(bufferLease, new AtomicLong(0L), new AtomicLong(limit)));
+                    //rv.add(new TrackedMemorySegmentLease(bufferLease, new AtomicLong(0L), new AtomicLong(limit)));
+                    bufferLease.position(0L);
+                    bufferLease.limit(limit);
+                    rv.add(bufferLease);
                 }
                 else {
                     //else: full mem.segment used, no need to set limit.
-                    rv.add(new TrackedMemorySegmentLease(bufferLease));
+                    //rv.add(new TrackedMemorySegmentLease(bufferLease));
+                    rv.add(bufferLease);
                 }
             }
 
@@ -159,10 +159,6 @@ final class PlainSocket implements Socket {
                 allWritten = true;
             }
         }
-
-        rv.forEach(l -> {
-            System.out.println(Arrays.toString(l.leasedObject().toArray(ValueLayout.JAVA_BYTE)));
-        });
 
         return new WrittenResult(bytesWritten, rv);
     }

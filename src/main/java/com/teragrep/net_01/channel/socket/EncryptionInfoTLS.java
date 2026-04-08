@@ -48,7 +48,6 @@ package com.teragrep.net_01.channel.socket;
 import tlschannel.TlsChannel;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.security.cert.X509Certificate;
 import java.security.Principal;
 import java.security.cert.Certificate;
 

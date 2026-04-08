@@ -51,7 +51,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.foreign.MemorySegment;
-import java.nio.ByteBuffer;
 import java.util.List;
 
 public final class WriteableLeaseful implements Writeable {
@@ -92,7 +91,8 @@ public final class WriteableLeaseful implements Writeable {
             // FIXME: bufferLease.removeRef();
             try {
                 bufferLease.close();
-            } catch (Exception e) {
+            }
+            catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }

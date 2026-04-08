@@ -45,10 +45,7 @@
  */
 package com.teragrep.net_01.channel.context;
 
-import com.teragrep.buf_01.buffer.lease.Lease;
 import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
-
-import java.lang.foreign.MemorySegment;
 
 public interface Clock extends AutoCloseable {
 

@@ -49,7 +49,6 @@ import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
 import tlschannel.TlsChannel;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.List;
 

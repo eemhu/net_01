@@ -47,7 +47,6 @@ package com.teragrep.net_01.channel.socket;
 
 import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
 
-import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Collections;
 import java.util.List;

@@ -49,7 +49,6 @@ import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
 import com.teragrep.net_01.channel.buffer.access.Access;
 import com.teragrep.net_01.channel.buffer.access.Lease;
 
-import java.nio.ByteBuffer;
 import java.util.List;
 
 public final class WriteableAccess implements Writeable {

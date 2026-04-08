@@ -45,7 +45,6 @@
  */
 package com.teragrep.net_01.channel.context;
 
-import com.teragrep.buf_01.buffer.lease.OpenableLease;
 import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
 import com.teragrep.net_01.channel.buffer.writable.Writeable;
 import com.teragrep.net_01.channel.buffer.writable.WriteableStub;
@@ -57,16 +56,12 @@ import tlschannel.NeedsWriteException;
 
 import java.io.IOException;
 
-import java.lang.foreign.MemorySegment;
-import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -170,33 +165,18 @@ final class EgressImpl implements Egress {
     private void transmit(final List<Writeable> toWriteList) throws IOException {
 
         try {
+            final List<TrackedMemorySegmentLease> writeBuffers = new ArrayList<>();
 
-            int numberOfBuffers = 0;
-            Iterator<Writeable> toWriteIterator = toWriteList.iterator();
-            while (toWriteIterator.hasNext()) {
-                Writeable w = toWriteIterator.next();
-                numberOfBuffers += w.memorySegmentLeases().size();
-            }
-
-            TrackedMemorySegmentLease[] writeBuffers = new TrackedMemorySegmentLease[numberOfBuffers];
-            int writeBuffersIndex = 0;
-
-            Iterator<Writeable> toWriteIterator2 = toWriteList.iterator();
-            while (toWriteIterator2.hasNext()) {
-                Writeable w = toWriteIterator2.next();
-
-                for (TrackedMemorySegmentLease buffer : w.memorySegmentLeases()) {
-                    writeBuffers[writeBuffersIndex] = buffer;
-                    writeBuffersIndex++;
-                }
-
-                toWriteIterator2.remove();
+            for (final Writeable w : toWriteList) {
+                writeBuffers.addAll(w.memorySegmentLeases());
                 writeInProgressList.add(w);
             }
 
+            LOGGER.info("Writing to socket");
 
             final WrittenResult result = establishedContext.socket().write(writeBuffers);
 
+            LOGGER.info("Transmit <{}> byte(s) to socket", result.bytes());
             // remove written ones
             Iterator<Writeable> writeableIterator = writeInProgressList.iterator();
             while (writeableIterator.hasNext()) {

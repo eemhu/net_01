@@ -52,8 +52,8 @@ import java.util.List;
 
 /**
  * Decoration of {@link Writeable} Invalidates a writable so that {@link ByteBuffer}s returned from
- * {@link Writeable#memorySegmentLeases()} have position and limit set to zero. Because ByteBuffer can not be Decorated directly
- * this is only viable alternative to best-effort invalidate access to it.
+ * {@link Writeable#memorySegmentLeases()} have position and limit set to zero. Because ByteBuffer can not be Decorated
+ * directly this is only viable alternative to best-effort invalidate access to it.
  */
 public final class WriteableInvalidation implements Writeable {
 
@@ -68,7 +68,8 @@ public final class WriteableInvalidation implements Writeable {
         for (final TrackedMemorySegmentLease lease : memorySegmentLeases()) {
             try {
                 lease.close();
-            } catch (final Exception e) {
+            }
+            catch (final Exception e) {
                 throw new RuntimeException("Error occurred whilst closing lease", e);
             }
         }

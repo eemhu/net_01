@@ -84,7 +84,9 @@ final class EstablishedContextImpl implements EstablishedContext {
         this.executorService = executorService;
         this.socket = socket;
 
-        this.memorySegmentLeasePool = new OpeningPool(new UnboundPool<>(new ArenaMemorySegmentLeaseSupplier(Arena.ofShared(), 4096), new MemorySegmentLeaseStub()));
+        this.memorySegmentLeasePool = new OpeningPool(
+                new UnboundPool<>(new ArenaMemorySegmentLeaseSupplier(Arena.ofShared(), 4096), new MemorySegmentLeaseStub())
+        );
         this.ingress = new IngressImpl(this, this.memorySegmentLeasePool);
         this.egress = new EgressImpl(this);
 
