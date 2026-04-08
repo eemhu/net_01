@@ -149,6 +149,13 @@ public class TrackedMemorySegmentLease implements Lease<MemorySegment>, Iterator
     }
 
     public void position(final long newPosition) {
+        final long segmentByteSize = leasedObject().byteSize();
+        if (newPosition < 0 || newPosition > segmentByteSize) {
+            throw new IndexOutOfBoundsException(
+                    "New position was out of bounds; expected value between 0 and " + segmentByteSize + "; was "
+                            + newPosition
+            );
+        }
         currentOffset.set(newPosition);
     }
 
@@ -157,8 +164,12 @@ public class TrackedMemorySegmentLease implements Lease<MemorySegment>, Iterator
     }
 
     public void limit(final long newLimit) {
-        if (newLimit < 0 || newLimit > leasedObject().byteSize()) {
-            throw new IndexOutOfBoundsException("Out of bounds");
+        final long segmentByteSize = leasedObject().byteSize();
+        if (newLimit < -1 || newLimit > segmentByteSize) {
+            throw new IndexOutOfBoundsException(
+                    "New limit was out of bounds; expected value between -1 and " + segmentByteSize + "; was "
+                            + newLimit
+            );
         }
 
         limit.set(newLimit);
