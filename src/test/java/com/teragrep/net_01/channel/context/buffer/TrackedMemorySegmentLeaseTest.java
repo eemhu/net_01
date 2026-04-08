@@ -64,11 +64,11 @@ public final class TrackedMemorySegmentLeaseTest {
         );
         final TrackedMemorySegmentLease trackedLease = new TrackedMemorySegmentLease(pool.get());
 
-        Assertions.assertEquals(0L, trackedLease.position());
+        Assertions.assertEquals(0L, trackedLease.currentPosition());
 
         int loops = 0;
         for (int i = 0; i < 5; i++) {
-            Assertions.assertEquals(i, trackedLease.position());
+            Assertions.assertEquals(i, trackedLease.currentPosition());
             Assertions.assertTrue(trackedLease.hasNext());
             Assertions.assertEquals((byte) 0, trackedLease.next());
             loops++;
@@ -77,6 +77,6 @@ public final class TrackedMemorySegmentLeaseTest {
 
         Assertions.assertFalse(trackedLease.hasNext());
         Assertions.assertThrows(IndexOutOfBoundsException.class, trackedLease::next);
-        Assertions.assertEquals(5L, trackedLease.position());
+        Assertions.assertEquals(5L, trackedLease.currentPosition());
     }
 }

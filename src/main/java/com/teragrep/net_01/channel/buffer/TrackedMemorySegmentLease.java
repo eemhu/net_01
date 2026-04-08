@@ -144,28 +144,24 @@ public class TrackedMemorySegmentLease implements Lease<MemorySegment>, Iterator
         origin.leasedObject().set(ValueLayout.JAVA_BYTE, nextIndex, b);
     }
 
-    public long position() {
+    public long currentPosition() {
         return currentOffset.get();
     }
 
-    public void position(long pos) {
-        currentOffset.set(pos);
+    public void position(final long newPosition) {
+        currentOffset.set(newPosition);
     }
 
-    public long limit() {
+    public long currentLimit() {
         return limit.get();
     }
 
-    public void limit(long newLimit) {
-        limit.set(newLimit);
-    }
-
-    public long limit(int index) {
-        if (index < 0 || index > leasedObject().byteSize()) {
+    public long limit(final long newLimit) {
+        if (newLimit < 0 || newLimit > leasedObject().byteSize()) {
             throw new IndexOutOfBoundsException("Out of bounds");
         }
 
-        limit.set(index);
+        limit.set(newLimit);
         return limit.get();
     }
 }
