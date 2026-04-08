@@ -156,12 +156,11 @@ public class TrackedMemorySegmentLease implements Lease<MemorySegment>, Iterator
         return limit.get();
     }
 
-    public long limit(final long newLimit) {
+    public void limit(final long newLimit) {
         if (newLimit < 0 || newLimit > leasedObject().byteSize()) {
             throw new IndexOutOfBoundsException("Out of bounds");
         }
 
         limit.set(newLimit);
-        return limit.get();
     }
 }
