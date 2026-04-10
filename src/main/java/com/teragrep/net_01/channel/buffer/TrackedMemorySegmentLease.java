@@ -49,10 +49,9 @@ import com.teragrep.buf_01.buffer.lease.Lease;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
-import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class TrackedMemorySegmentLease implements Lease<MemorySegment>, Iterator<Byte> {
+public class TrackedMemorySegmentLease implements Lease<MemorySegment> {
 
     private final Lease<MemorySegment> origin;
     private final AtomicLong currentOffset;
@@ -111,7 +110,6 @@ public class TrackedMemorySegmentLease implements Lease<MemorySegment>, Iterator
         origin.close();
     }
 
-    @Override
     public boolean hasNext() {
         final boolean rv;
         if (limit.get() == -1) {
@@ -124,8 +122,7 @@ public class TrackedMemorySegmentLease implements Lease<MemorySegment>, Iterator
         return rv;
     }
 
-    @Override
-    public Byte next() {
+    public byte next() {
         if (!hasNext()) {
             throw new IndexOutOfBoundsException("Reached end of segment or limit, cannot provide next byte");
         }

@@ -68,7 +68,7 @@ public final class SendingClock implements Clock {
     public void advance(final TrackedMemorySegmentLease bufferLease) {
         final StringBuilder stringBuilder = new StringBuilder();
         while (bufferLease.hasNext()) {
-            final char c = (char) bufferLease.next().byteValue();
+            final char c = (char) bufferLease.next();
             stringBuilder.append(c);
         }
 

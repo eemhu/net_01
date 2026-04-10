@@ -163,7 +163,7 @@ public final class SocketTest {
         final StringBuilder stringBuilder = new StringBuilder();
         for (final TrackedMemorySegmentLease buf : leases) {
             while (buf.hasNext()) {
-                stringBuilder.append((char) buf.next().byteValue());
+                stringBuilder.append((char) buf.next());
             }
         }
         return stringBuilder.toString();
