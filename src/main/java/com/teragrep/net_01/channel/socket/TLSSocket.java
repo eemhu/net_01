@@ -46,11 +46,14 @@
 package com.teragrep.net_01.channel.socket;
 
 import com.teragrep.buf_01.buffer.lease.TrackedLease;
+import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 import tlschannel.TlsChannel;
 
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
 import java.util.List;
 
 final class TLSSocket implements Socket {
@@ -67,15 +70,101 @@ final class TLSSocket implements Socket {
     }
 
     @Override
-    public ReadResult read(List<TrackedLease<MemorySegment>> dsts) throws IOException {
-        throw new UnsupportedOperationException();
-        //return tlsChannel.read(dsts);
+    public ReadResult read(List<TrackedLease<MemorySegment>> srcs) throws IOException {
+        final List<TrackedLease<MemorySegment>> rv = new ArrayList<>(srcs.size());
+        final List<ByteBuffer> byteBuffers = new ArrayList<>(srcs.size());
+        srcs.forEach(src -> {
+            byteBuffers.add(src.leasedObject().asByteBuffer());
+        });
+
+        final long readBytes = tlsChannel.read(byteBuffers.toArray(new ByteBuffer[0]));
+
+        long bytesLeft = readBytes;
+        boolean allRead = false;
+        for (final TrackedLease<MemorySegment> bufferLease : srcs) {
+            final long byteSize = bufferLease.leasedObject().byteSize();
+
+            if (!allRead && readBytes > 0) {
+                // same as ByteBuffer.flip()
+                final long diff = bytesLeft - byteSize;
+                if (diff < 0) {
+                    // mem.segment bigger than bytes left.
+                    // set limit to read amount.
+                    final long limit = byteSize - Math.abs(diff);
+                    rv.add(new TrackedMemorySegmentLease(bufferLease, 0L, limit));
+                }
+                else {
+                    //else: full mem.segment used, no need to set limit.
+                    rv.add(new TrackedMemorySegmentLease(bufferLease));
+                }
+            }
+
+            bytesLeft -= byteSize;
+
+            if (bytesLeft <= 0) {
+                allRead = true;
+            }
+        }
+
+        //rv.forEach(l -> {
+        System.out.println("Lease:");
+        /*for (long i = 0 ; i < l.leasedObject().byteSize(); i++) {
+            System.out.printf("%s", (char)l.leasedObject().get(ValueLayout.JAVA_BYTE, i));
+        }*/
+
+        /* while (l.hasNext()) {
+             System.out.printf("%s", (char)l.next().byteValue());
+         }
+
+         System.out.println();*/
+        //});
+        return new ReadResult(readBytes, rv);
     }
 
     @Override
-    public WrittenResult write(List<TrackedLease<MemorySegment>> dsts) throws IOException {
-        throw new UnsupportedOperationException();
-        //return tlsChannel.write(dsts);
+    public WrittenResult write(List<TrackedLease<MemorySegment>> leases) throws IOException {
+        final List<ByteBuffer> buffersToWrite = new ArrayList<>(leases.size());
+        final List<TrackedLease<MemorySegment>> rv = new ArrayList<>(leases.size());
+
+        for (final TrackedLease<MemorySegment> lease : leases) {
+            buffersToWrite.add(lease.leasedObject().asByteBuffer());
+        }
+
+        final long bytesWritten = tlsChannel.write(buffersToWrite.toArray(new ByteBuffer[0]));
+        System.out.println("wrote bytes: " + bytesWritten);
+
+        long bytesLeft = bytesWritten;
+        boolean allWritten = false;
+        for (final TrackedLease<MemorySegment> bufferLease : leases) {
+            final long byteSize = bufferLease.leasedObject().byteSize();
+
+            if (!allWritten && bytesWritten > 0) {
+                // same as ByteBuffer.flip()
+                final long diff = bytesLeft - byteSize;
+                if (diff < 0) {
+                    // mem.segment bigger than bytes left.
+                    // set limit to written amount.
+                    final long limit = byteSize - Math.abs(diff);
+                    //rv.add(new TrackedMemorySegmentLease(bufferLease, new AtomicLong(0L), new AtomicLong(limit)));
+                    bufferLease.position(0L);
+                    bufferLease.limit(limit);
+                    rv.add(bufferLease);
+                }
+                else {
+                    //else: full mem.segment used, no need to set limit.
+                    //rv.add(new TrackedMemorySegmentLease(bufferLease));
+                    rv.add(bufferLease);
+                }
+            }
+
+            bytesLeft -= byteSize;
+
+            if (bytesLeft <= 0) {
+                allWritten = true;
+            }
+        }
+
+        return new WrittenResult(bytesWritten, rv);
     }
 
     @Override
