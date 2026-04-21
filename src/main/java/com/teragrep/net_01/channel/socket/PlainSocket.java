@@ -54,7 +54,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 final class PlainSocket implements Socket {
 
@@ -104,18 +103,6 @@ final class PlainSocket implements Socket {
             }
         }
 
-        //rv.forEach(l -> {
-        System.out.println("Lease:");
-        /*for (long i = 0 ; i < l.leasedObject().byteSize(); i++) {
-            System.out.printf("%s", (char)l.leasedObject().get(ValueLayout.JAVA_BYTE, i));
-        }*/
-
-        /* while (l.hasNext()) {
-             System.out.printf("%s", (char)l.next().byteValue());
-         }
-        
-         System.out.println();*/
-        //});
         return new ReadResult(readBytes, rv);
     }
 
@@ -129,7 +116,6 @@ final class PlainSocket implements Socket {
         }
 
         final long bytesWritten = socketChannel.write(buffersToWrite.toArray(new ByteBuffer[0]));
-        System.out.println("wrote bytes: " + bytesWritten);
 
         long bytesLeft = bytesWritten;
         boolean allWritten = false;
@@ -143,14 +129,12 @@ final class PlainSocket implements Socket {
                     // mem.segment bigger than bytes left.
                     // set limit to written amount.
                     final long limit = byteSize - Math.abs(diff);
-                    //rv.add(new TrackedMemorySegmentLease(bufferLease, new AtomicLong(0L), new AtomicLong(limit)));
                     bufferLease.position(0L);
                     bufferLease.limit(limit);
                     rv.add(bufferLease);
                 }
                 else {
                     //else: full mem.segment used, no need to set limit.
-                    //rv.add(new TrackedMemorySegmentLease(bufferLease));
                     rv.add(bufferLease);
                 }
             }

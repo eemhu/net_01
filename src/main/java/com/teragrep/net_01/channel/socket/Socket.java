@@ -49,7 +49,6 @@ import com.teragrep.buf_01.buffer.lease.TrackedLease;
 
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
-import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.List;
 
