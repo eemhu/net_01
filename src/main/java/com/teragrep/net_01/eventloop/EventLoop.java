@@ -197,7 +197,6 @@ public final class EventLoop implements AutoCloseable, Runnable {
         try {
             LOGGER.info("Started");
             while (!stop.get()) {
-                System.out.println("polling " + Thread.currentThread().getName());
                 poll();
             }
         }

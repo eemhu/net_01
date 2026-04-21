@@ -108,12 +108,10 @@ final class IngressImpl implements Ingress {
                 long readBytes = readData();
 
                 if (!isDataAvailable(readBytes)) {
-                    System.out.println("No data available");
                     break;
                 }
 
                 boolean continueReading = true;
-                System.out.println("activeBuffers.isEmpty=" + activeBuffers.isEmpty());
                 while (!activeBuffers.isEmpty()) {
                     // IMPORTANT: current tls implementation will skip bytes if BufferLeases are not fully consumed.
                     TrackedLease<MemorySegment> bufferLease = activeBuffers.removeFirst();
@@ -137,7 +135,6 @@ final class IngressImpl implements Ingress {
 
                     if (bufferLease.hasNext()) {
                         // return back as it has some remaining
-                        System.out.println("something remaining");
                         LOGGER.debug("pushBack bufferLease id <{}>", bufferLease.id());
                         activeBuffers.add(bufferLease);
                         if (LOGGER.isDebugEnabled()) {
@@ -246,7 +243,6 @@ final class IngressImpl implements Ingress {
         final ReadResult result = establishedContext.socket().read(trackedMemorySegmentLeases);
 
         activeBuffers.addAll(result.leases());
-        System.out.println("buffers.size=" + activeBuffers.size());
 
         LOGGER.debug("establishedContext.read got <{}> bytes from socket", result.bytes());
 

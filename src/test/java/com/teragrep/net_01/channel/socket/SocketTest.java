@@ -65,7 +65,6 @@ import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -179,7 +178,6 @@ public final class SocketTest {
         int currentIndex = 0;
         long size = currentLease.leasedObject().byteSize();
         for (int i = 0; i < bytes.length; i++) {
-            System.out.println("i: " + i + " " + bytes[i]);
             if (currentIndex < size) {
                 currentLease.leasedObject().set(ValueLayout.JAVA_BYTE, currentIndex, bytes[i]);
                 currentIndex++;
@@ -194,11 +192,6 @@ public final class SocketTest {
                 currentLease.leasedObject().set(ValueLayout.JAVA_BYTE, currentIndex, bytes[i]);
             }
         }
-
-        System.out.println("stringToBuffer");
-        leases.forEach(l -> {
-            System.out.println(Arrays.toString(l.leasedObject().toArray(ValueLayout.JAVA_BYTE)));
-        });
 
         return leases;
     }

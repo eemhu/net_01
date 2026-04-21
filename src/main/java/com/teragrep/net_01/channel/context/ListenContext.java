@@ -85,7 +85,6 @@ public final class ListenContext implements Context {
 
     @Override
     public void handleEvent(SelectionKey selectionKey) {
-        System.out.println("handling event: " + selectionKey);
         try {
             if (selectionKey.isAcceptable()) {
                 // create the client socket for a newly received connection
