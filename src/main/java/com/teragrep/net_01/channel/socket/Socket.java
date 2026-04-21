@@ -45,9 +45,10 @@
  */
 package com.teragrep.net_01.channel.socket;
 
-import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
 
 import java.io.IOException;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.List;
@@ -60,20 +61,20 @@ public interface Socket {
     /**
      * Read data from a network connection.
      * 
-     * @param dsts {@link ByteBuffer}s which are read to from the connection
+     * @param srcs {@link TrackedLease<MemorySegment>}s which are read to from the connection
      * @return amount of bytes read
      * @throws IOException if read fails
      */
-    ReadResult read(List<TrackedMemorySegmentLease> srcs) throws IOException;
+    ReadResult read(List<TrackedLease<MemorySegment>> srcs) throws IOException;
 
     /**
      * Write data through a network connection.
      * 
-     * @param dsts {@link ByteBuffer}s which are written to the connection
+     * @param dsts {@link TrackedLease<MemorySegment>}s which are written to the connection
      * @return amount of bytes written
      * @throws IOException if write fails
      */
-    WrittenResult write(List<TrackedMemorySegmentLease> dsts) throws IOException;
+    WrittenResult write(List<TrackedLease<MemorySegment>> dsts) throws IOException;
 
     /**
      * Provides information about a network connection

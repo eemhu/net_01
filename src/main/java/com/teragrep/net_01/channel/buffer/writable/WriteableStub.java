@@ -45,14 +45,15 @@
  */
 package com.teragrep.net_01.channel.buffer.writable;
 
-import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
 
+import java.lang.foreign.MemorySegment;
 import java.util.List;
 
 public final class WriteableStub implements Writeable {
 
     @Override
-    public List<TrackedMemorySegmentLease> memorySegmentLeases() {
+    public List<TrackedLease<MemorySegment>> memorySegmentLeases() {
         throw new UnsupportedOperationException("WriteableStub does not allow this method");
     }
 

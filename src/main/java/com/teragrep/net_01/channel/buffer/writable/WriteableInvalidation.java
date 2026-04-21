@@ -45,8 +45,9 @@
  */
 package com.teragrep.net_01.channel.buffer.writable;
 
-import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -65,7 +66,7 @@ public final class WriteableInvalidation implements Writeable {
 
     @Override
     public void close() {
-        for (final TrackedMemorySegmentLease lease : memorySegmentLeases()) {
+        for (final TrackedLease<MemorySegment> lease : memorySegmentLeases()) {
             try {
                 lease.close();
             }
@@ -77,7 +78,7 @@ public final class WriteableInvalidation implements Writeable {
     }
 
     @Override
-    public List<TrackedMemorySegmentLease> memorySegmentLeases() {
+    public List<TrackedLease<MemorySegment>> memorySegmentLeases() {
         return writeable.memorySegmentLeases();
     }
 

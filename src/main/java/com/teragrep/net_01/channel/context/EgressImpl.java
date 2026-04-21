@@ -45,7 +45,7 @@
  */
 package com.teragrep.net_01.channel.context;
 
-import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
 import com.teragrep.net_01.channel.buffer.writable.Writeable;
 import com.teragrep.net_01.channel.buffer.writable.WriteableStub;
 import com.teragrep.net_01.channel.socket.WrittenResult;
@@ -56,6 +56,7 @@ import tlschannel.NeedsWriteException;
 
 import java.io.IOException;
 
+import java.lang.foreign.MemorySegment;
 import java.nio.channels.CancelledKeyException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -165,7 +166,7 @@ final class EgressImpl implements Egress {
     private void transmit(final List<Writeable> toWriteList) throws IOException {
 
         try {
-            final List<TrackedMemorySegmentLease> writeBuffers = new ArrayList<>();
+            final List<TrackedLease<MemorySegment>> writeBuffers = new ArrayList<>();
 
             for (final Writeable w : toWriteList) {
                 writeBuffers.addAll(w.memorySegmentLeases());

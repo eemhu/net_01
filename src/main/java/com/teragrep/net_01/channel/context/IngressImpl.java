@@ -46,8 +46,9 @@
 package com.teragrep.net_01.channel.context;
 
 import com.teragrep.buf_01.buffer.lease.OpenableLease;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
+import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 import com.teragrep.buf_01.buffer.pool.LeaseMultiGet;
-import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
 import com.teragrep.net_01.channel.socket.ReadResult;
 import com.teragrep.poj_01.pool.Pool;
 import org.slf4j.Logger;
@@ -74,7 +75,7 @@ final class IngressImpl implements Ingress {
     private final EstablishedContextImpl establishedContext;
     private final Pool<OpenableLease<MemorySegment>> memorySegmentLeasePool;
 
-    private final List<TrackedMemorySegmentLease> activeBuffers;
+    private final List<TrackedLease<MemorySegment>> activeBuffers;
     private final Lock lock;
     // tls
     public final AtomicBoolean needWrite;
@@ -115,7 +116,7 @@ final class IngressImpl implements Ingress {
                 System.out.println("activeBuffers.isEmpty=" + activeBuffers.isEmpty());
                 while (!activeBuffers.isEmpty()) {
                     // IMPORTANT: current tls implementation will skip bytes if BufferLeases are not fully consumed.
-                    TrackedMemorySegmentLease bufferLease = activeBuffers.removeFirst();
+                    TrackedLease<MemorySegment> bufferLease = activeBuffers.removeFirst();
                     LOGGER
                             .debug(
                                     "submitting buffer <{}> from activeBuffers <{}> to relpFrame", bufferLease,
@@ -234,7 +235,7 @@ final class IngressImpl implements Ingress {
 
         List<OpenableLease<MemorySegment>> bufferLeases = new LeaseMultiGet(memorySegmentLeasePool).get(4);
 
-        List<TrackedMemorySegmentLease> trackedMemorySegmentLeases = new LinkedList<>();
+        List<TrackedLease<MemorySegment>> trackedMemorySegmentLeases = new LinkedList<>();
         for (OpenableLease<MemorySegment> bufferLease : bufferLeases) {
             if (bufferLease.isStub()) {
                 continue;

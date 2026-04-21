@@ -47,10 +47,11 @@ package com.teragrep.net_01.channel.socket;
 
 import com.teragrep.buf_01.buffer.lease.MemorySegmentLeaseStub;
 import com.teragrep.buf_01.buffer.lease.OpenableLease;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
+import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 import com.teragrep.buf_01.buffer.pool.LeaseMultiGet;
 import com.teragrep.buf_01.buffer.pool.OpeningPool;
 import com.teragrep.buf_01.buffer.supply.ArenaMemorySegmentLeaseSupplier;
-import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
 import com.teragrep.poj_01.pool.UnboundPool;
 import org.junit.jupiter.api.*;
 
@@ -148,7 +149,7 @@ public final class SocketTest {
 
             out.println("worldHello");
 
-            List<TrackedMemorySegmentLease> bufs = emptyBuffers(10);
+            List<TrackedLease<MemorySegment>> bufs = emptyBuffers(10);
             ReadResult res = socket.read(bufs);
 
             Assertions.assertEquals("worldHello\n", bufferToString(res.leases()));
@@ -159,9 +160,9 @@ public final class SocketTest {
         });
     }
 
-    private String bufferToString(final List<TrackedMemorySegmentLease> leases) {
+    private String bufferToString(final List<TrackedLease<MemorySegment>> leases) {
         final StringBuilder stringBuilder = new StringBuilder();
-        for (final TrackedMemorySegmentLease buf : leases) {
+        for (final TrackedLease<MemorySegment> buf : leases) {
             while (buf.hasNext()) {
                 stringBuilder.append((char) buf.next());
             }
@@ -169,12 +170,12 @@ public final class SocketTest {
         return stringBuilder.toString();
     }
 
-    private List<TrackedMemorySegmentLease> stringToBuffer(final String str) {
+    private List<TrackedLease<MemorySegment>> stringToBuffer(final String str) {
         final byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
-        final List<TrackedMemorySegmentLease> leases = emptyBuffers(bytes.length);
+        final List<TrackedLease<MemorySegment>> leases = emptyBuffers(bytes.length);
 
-        Iterator<TrackedMemorySegmentLease> it = leases.iterator();
-        TrackedMemorySegmentLease currentLease = it.next();
+        Iterator<TrackedLease<MemorySegment>> it = leases.iterator();
+        TrackedLease<MemorySegment> currentLease = it.next();
         int currentIndex = 0;
         long size = currentLease.leasedObject().byteSize();
         for (int i = 0; i < bytes.length; i++) {
@@ -202,9 +203,9 @@ public final class SocketTest {
         return leases;
     }
 
-    private List<TrackedMemorySegmentLease> emptyBuffers(int bytes) {
+    private List<TrackedLease<MemorySegment>> emptyBuffers(int bytes) {
         final List<OpenableLease<MemorySegment>> leases = new LeaseMultiGet(pool).get(bytes);
-        final List<TrackedMemorySegmentLease> rv = new ArrayList<>(leases.size());
+        final List<TrackedLease<MemorySegment>> rv = new ArrayList<>(leases.size());
 
         leases.forEach(lease -> {
             rv.add(new TrackedMemorySegmentLease(lease));

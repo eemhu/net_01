@@ -45,9 +45,11 @@
  */
 package com.teragrep.net_01.channel.socket;
 
-import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
+import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 
 import java.io.IOException;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
@@ -66,8 +68,8 @@ final class PlainSocket implements Socket {
     }
 
     @Override
-    public ReadResult read(List<TrackedMemorySegmentLease> srcs) throws IOException {
-        final List<TrackedMemorySegmentLease> rv = new ArrayList<>(srcs.size());
+    public ReadResult read(List<TrackedLease<MemorySegment>> srcs) throws IOException {
+        final List<TrackedLease<MemorySegment>> rv = new ArrayList<>(srcs.size());
         final List<ByteBuffer> byteBuffers = new ArrayList<>(srcs.size());
         srcs.forEach(src -> {
             byteBuffers.add(src.leasedObject().asByteBuffer());
@@ -77,7 +79,7 @@ final class PlainSocket implements Socket {
 
         long bytesLeft = readBytes;
         boolean allRead = false;
-        for (final TrackedMemorySegmentLease bufferLease : srcs) {
+        for (final TrackedLease<MemorySegment> bufferLease : srcs) {
             final long byteSize = bufferLease.leasedObject().byteSize();
 
             if (!allRead && readBytes > 0) {
@@ -87,7 +89,7 @@ final class PlainSocket implements Socket {
                     // mem.segment bigger than bytes left.
                     // set limit to read amount.
                     final long limit = byteSize - Math.abs(diff);
-                    rv.add(new TrackedMemorySegmentLease(bufferLease, new AtomicLong(0L), new AtomicLong(limit)));
+                    rv.add(new TrackedMemorySegmentLease(bufferLease, 0L, limit));
                 }
                 else {
                     //else: full mem.segment used, no need to set limit.
@@ -118,11 +120,11 @@ final class PlainSocket implements Socket {
     }
 
     @Override
-    public WrittenResult write(List<TrackedMemorySegmentLease> leases) throws IOException {
+    public WrittenResult write(List<TrackedLease<MemorySegment>> leases) throws IOException {
         final List<ByteBuffer> buffersToWrite = new ArrayList<>(leases.size());
-        final List<TrackedMemorySegmentLease> rv = new ArrayList<>(leases.size());
+        final List<TrackedLease<MemorySegment>> rv = new ArrayList<>(leases.size());
 
-        for (final TrackedMemorySegmentLease lease : leases) {
+        for (final TrackedLease<MemorySegment> lease : leases) {
             buffersToWrite.add(lease.leasedObject().asByteBuffer());
         }
 
@@ -131,7 +133,7 @@ final class PlainSocket implements Socket {
 
         long bytesLeft = bytesWritten;
         boolean allWritten = false;
-        for (final TrackedMemorySegmentLease bufferLease : leases) {
+        for (final TrackedLease<MemorySegment> bufferLease : leases) {
             final long byteSize = bufferLease.leasedObject().byteSize();
 
             if (!allWritten && bytesWritten > 0) {

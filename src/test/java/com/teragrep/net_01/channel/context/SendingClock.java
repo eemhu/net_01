@@ -45,11 +45,12 @@
  */
 package com.teragrep.net_01.channel.context;
 
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
 import com.teragrep.buf_01.buffer.pool.OpeningPool;
 import com.teragrep.net_01.channel.StringToLease;
-import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
 import com.teragrep.net_01.channel.buffer.writable.Writeable;
 
+import java.lang.foreign.MemorySegment;
 import java.util.function.Consumer;
 
 public final class SendingClock implements Clock {
@@ -65,7 +66,7 @@ public final class SendingClock implements Clock {
     }
 
     @Override
-    public void advance(final TrackedMemorySegmentLease bufferLease) {
+    public void advance(final TrackedLease<MemorySegment> bufferLease) {
         final StringBuilder stringBuilder = new StringBuilder();
         while (bufferLease.hasNext()) {
             final char c = (char) bufferLease.next();

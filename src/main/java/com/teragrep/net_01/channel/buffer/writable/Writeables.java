@@ -45,8 +45,10 @@
  */
 package com.teragrep.net_01.channel.buffer.writable;
 
-import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
+import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 
+import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,7 +61,7 @@ public final class Writeables implements Writeable {
     }
 
     @Override
-    public List<TrackedMemorySegmentLease> memorySegmentLeases() {
+    public List<TrackedLease<MemorySegment>> memorySegmentLeases() {
         long totalBuffers = 0;
         for (Writeable writeable : writeables) {
             totalBuffers = totalBuffers + writeable.memorySegmentLeases().size();
@@ -71,7 +73,7 @@ public final class Writeables implements Writeable {
             );
         }
 
-        List<TrackedMemorySegmentLease> bufferArray = new ArrayList<>((int) totalBuffers);
+        List<TrackedLease<MemorySegment>> bufferArray = new ArrayList<>((int) totalBuffers);
         for (final Writeable writeable : writeables) {
             bufferArray.addAll(writeable.memorySegmentLeases());
         }

@@ -46,7 +46,8 @@
 package com.teragrep.net_01.channel.buffer.writable;
 
 import com.teragrep.buf_01.buffer.lease.OpenableLease;
-import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
+import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +67,7 @@ public final class WriteableLeaseful implements Writeable {
     }
 
     @Override
-    public List<TrackedMemorySegmentLease> memorySegmentLeases() {
+    public List<TrackedLease<MemorySegment>> memorySegmentLeases() {
         return writeable.memorySegmentLeases();
     }
 

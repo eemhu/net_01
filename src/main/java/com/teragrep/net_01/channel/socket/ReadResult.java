@@ -45,16 +45,17 @@
  */
 package com.teragrep.net_01.channel.socket;
 
-import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
 
+import java.lang.foreign.MemorySegment;
 import java.util.List;
 
-public final class ReadResult implements IOResult<TrackedMemorySegmentLease> {
+public final class ReadResult implements IOResult<TrackedLease<MemorySegment>> {
 
     private final long bytesRead;
-    private final List<TrackedMemorySegmentLease> leases;
+    private final List<TrackedLease<MemorySegment>> leases;
 
-    public ReadResult(final long bytesRead, final List<TrackedMemorySegmentLease> leases) {
+    public ReadResult(final long bytesRead, final List<TrackedLease<MemorySegment>> leases) {
         this.bytesRead = bytesRead;
         this.leases = leases;
     }
@@ -65,7 +66,7 @@ public final class ReadResult implements IOResult<TrackedMemorySegmentLease> {
     }
 
     @Override
-    public List<TrackedMemorySegmentLease> leases() {
+    public List<TrackedLease<MemorySegment>> leases() {
         return leases;
     }
 }

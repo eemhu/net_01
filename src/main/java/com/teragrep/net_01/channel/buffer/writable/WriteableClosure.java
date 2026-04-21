@@ -45,11 +45,13 @@
  */
 package com.teragrep.net_01.channel.buffer.writable;
 
-import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
+import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 import com.teragrep.net_01.channel.context.EstablishedContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.foreign.MemorySegment;
 import java.util.List;
 
 /**
@@ -82,7 +84,7 @@ public final class WriteableClosure implements Writeable {
     }
 
     @Override
-    public List<TrackedMemorySegmentLease> memorySegmentLeases() {
+    public List<TrackedLease<MemorySegment>> memorySegmentLeases() {
         return writeable.memorySegmentLeases();
     }
 

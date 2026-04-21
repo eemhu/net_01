@@ -45,8 +45,9 @@
  */
 package com.teragrep.net_01.channel.context;
 
-import com.teragrep.net_01.channel.buffer.TrackedMemorySegmentLease;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
 
+import java.lang.foreign.MemorySegment;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -62,7 +63,7 @@ public final class ConsumingClock implements Clock {
     }
 
     @Override
-    public void advance(TrackedMemorySegmentLease lease) {
+    public void advance(TrackedLease<MemorySegment> lease) {
         final List<Byte> bytes = new ArrayList<>();
         while (lease.hasNext()) {
             bytes.add(lease.next());
