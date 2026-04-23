@@ -69,6 +69,7 @@ public final class ServerReceivingTest {
     private Server server;
     private CountDownLatch countDownLatch;
     private final List<List<Byte>> messages = new ArrayList<>();
+    private Thread elT;
 
     @BeforeAll
     void beforeAll() {
@@ -82,7 +83,7 @@ public final class ServerReceivingTest {
         final EventLoop el = Assertions.assertDoesNotThrow(eventLoopFactory::create);
 
         // eventLoopThread must run, otherwise nothing will be processed
-        final Thread elT = new Thread(el);
+        elT = new Thread(el);
         elT.start();
 
         final ServerFactory serverFactory = new ServerFactory(
@@ -98,6 +99,7 @@ public final class ServerReceivingTest {
     @AfterAll
     void afterAll() {
         Assertions.assertDoesNotThrow(this.server::close);
+        elT.interrupt();
     }
 
     @AfterEach

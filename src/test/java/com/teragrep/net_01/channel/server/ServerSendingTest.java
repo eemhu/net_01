@@ -72,6 +72,7 @@ public final class ServerSendingTest {
     private Server server;
     private CountDownLatch countDownLatch;
     private OpeningPool pool;
+    private Thread elT;
 
     @BeforeAll
     void beforeAll() {
@@ -85,7 +86,7 @@ public final class ServerSendingTest {
         final EventLoop el = Assertions.assertDoesNotThrow(eventLoopFactory::create);
 
         // eventLoopThread must run, otherwise nothing will be processed
-        final Thread elT = new Thread(el);
+        elT = new Thread(el);
         elT.start();
 
         final ServerFactory serverFactory = new ServerFactory(
@@ -102,30 +103,30 @@ public final class ServerSendingTest {
     void afterAll() {
         Assertions.assertDoesNotThrow(this.server::close);
         Assertions.assertDoesNotThrow(this.pool::close);
+        elT.interrupt();
     }
 
     @Test
     void testSending() {
-        this.countDownLatch = new CountDownLatch(1);
-        final java.net.Socket clientSocket = Assertions
-                .assertDoesNotThrow(() -> new java.net.Socket("localhost", 9090));
+        Assertions.assertDoesNotThrow(() -> {
+            this.countDownLatch = new CountDownLatch(1);
+            try (final java.net.Socket clientSocket = new java.net.Socket("localhost", 9090)) {
+                final PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);
+                final BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+                final String request = "Hello world! This is some input";
+                out.println(request);
+                out.flush();
 
-        final PrintWriter out = new PrintWriter(Assertions.assertDoesNotThrow(clientSocket::getOutputStream), true);
-        final BufferedReader in = new BufferedReader(
-                new InputStreamReader(Assertions.assertDoesNotThrow(clientSocket::getInputStream))
-        );
-        final String request = "Hello world! This is some input";
-        out.println(request);
-        out.flush();
+                countDownLatch.await();
 
-        Assertions.assertDoesNotThrow(() -> countDownLatch.await());
+                final String resp = Assertions.assertDoesNotThrow(in::readLine);
 
-        final String resp = Assertions.assertDoesNotThrow(in::readLine);
+                // SendingClock replies with the request
+                Assertions.assertEquals(request, resp);
+                in.close();
+                out.close();
+            }
+        });
 
-        // SendingClock replies with the request
-        Assertions.assertEquals(request, resp);
-        Assertions.assertDoesNotThrow(in::close);
-        Assertions.assertDoesNotThrow(out::close);
-        Assertions.assertDoesNotThrow(clientSocket::close);
     }
 }
