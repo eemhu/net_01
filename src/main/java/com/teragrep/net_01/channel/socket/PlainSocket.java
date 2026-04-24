@@ -68,13 +68,14 @@ final class PlainSocket implements Socket {
 
     @Override
     public ReadResult read(List<TrackedLease<MemorySegment>> srcs) throws IOException {
-        final List<TrackedLease<MemorySegment>> rv = new ArrayList<>(srcs.size());
-        final List<ByteBuffer> byteBuffers = new ArrayList<>(srcs.size());
-        srcs.forEach(src -> {
-            byteBuffers.add(src.leasedObject().asByteBuffer());
-        });
+        final int size = srcs.size();
+        final List<TrackedLease<MemorySegment>> rv = new ArrayList<>(size);
+        final ByteBuffer[] byteBuffers = new ByteBuffer[size];
+        for (int i = 0; i < size; i++) {
+            byteBuffers[i] = srcs.get(i).leasedObject().asByteBuffer();
+        }
 
-        final long readBytes = socketChannel.read(byteBuffers.toArray(new ByteBuffer[0]));
+        final long readBytes = socketChannel.read(byteBuffers);
 
         long bytesLeft = readBytes;
         boolean allRead = false;
@@ -108,14 +109,15 @@ final class PlainSocket implements Socket {
 
     @Override
     public WrittenResult write(List<TrackedLease<MemorySegment>> leases) throws IOException {
-        final List<ByteBuffer> buffersToWrite = new ArrayList<>(leases.size());
-        final List<TrackedLease<MemorySegment>> rv = new ArrayList<>(leases.size());
+        final int size = leases.size();
+        final ByteBuffer[] buffersToWrite = new ByteBuffer[size];
+        final List<TrackedLease<MemorySegment>> rv = new ArrayList<>(size);
 
-        for (final TrackedLease<MemorySegment> lease : leases) {
-            buffersToWrite.add(lease.leasedObject().asByteBuffer());
+        for (int i = 0; i < size; i++) {
+            buffersToWrite[i] = leases.get(i).leasedObject().asByteBuffer();
         }
 
-        final long bytesWritten = socketChannel.write(buffersToWrite.toArray(new ByteBuffer[0]));
+        final long bytesWritten = socketChannel.write(buffersToWrite);
 
         long bytesLeft = bytesWritten;
         boolean allWritten = false;
