@@ -93,6 +93,8 @@ public final class WriteableTest {
         Assertions.assertEquals(128, i);
         Assertions.assertFalse(w.hasRemaining());
         Assertions.assertFalse(lease.hasNext());
+
+        Assertions.assertThrows(IndexOutOfBoundsException.class, lease::next);
     }
 
     @Test
