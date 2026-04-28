@@ -69,6 +69,10 @@ public final class StringToLease {
     }
 
     public Writeable toWriteable() {
+        return new StringWriteable(toLeases());
+    }
+
+    public List<TrackedLease<MemorySegment>> toLeases() {
         final byte[] bytes = origin.getBytes(StandardCharsets.UTF_8);
         final List<OpenableLease<MemorySegment>> leases = new LeaseMultiGet(pool).get(bytes.length);
         final List<TrackedLease<MemorySegment>> trackedLeases = new ArrayList<>(leases.size());
@@ -84,6 +88,6 @@ public final class StringToLease {
             }
         }
 
-        return new StringWriteable(trackedLeases);
+        return trackedLeases;
     }
 }

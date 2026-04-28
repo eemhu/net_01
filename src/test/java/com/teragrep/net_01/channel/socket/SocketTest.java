@@ -52,6 +52,7 @@ import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 import com.teragrep.buf_01.buffer.pool.LeaseMultiGet;
 import com.teragrep.buf_01.buffer.pool.OpeningPool;
 import com.teragrep.buf_01.buffer.supply.ArenaMemorySegmentLeaseSupplier;
+import com.teragrep.net_01.channel.StringToLease;
 import com.teragrep.poj_01.pool.UnboundPool;
 import org.junit.jupiter.api.*;
 
@@ -60,12 +61,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -120,7 +118,7 @@ public final class SocketTest {
             // Init PlainSocket
             final Socket socket = new PlainSocket(socketCh.accept());
 
-            socket.write(stringToBuffer("helloWorld\n"));
+            socket.write(new StringToLease("helloWorld\n", pool).toLeases());
 
             final String readLine = in.readLine();
 
@@ -169,34 +167,7 @@ public final class SocketTest {
         return stringBuilder.toString();
     }
 
-    private List<TrackedLease<MemorySegment>> stringToBuffer(final String str) {
-        final byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
-        final List<TrackedLease<MemorySegment>> leases = emptyBuffers(bytes.length);
-
-        Iterator<TrackedLease<MemorySegment>> it = leases.iterator();
-        TrackedLease<MemorySegment> currentLease = it.next();
-        int currentIndex = 0;
-        long size = currentLease.leasedObject().byteSize();
-        for (int i = 0; i < bytes.length; i++) {
-            if (currentIndex < size) {
-                currentLease.leasedObject().set(ValueLayout.JAVA_BYTE, currentIndex, bytes[i]);
-                currentIndex++;
-            }
-            else {
-                if (!it.hasNext()) {
-                    throw new IllegalStateException();
-                }
-                currentLease = it.next();
-                currentIndex = 0;
-                size = currentLease.leasedObject().byteSize();
-                currentLease.leasedObject().set(ValueLayout.JAVA_BYTE, currentIndex, bytes[i]);
-            }
-        }
-
-        return leases;
-    }
-
-    private List<TrackedLease<MemorySegment>> emptyBuffers(int bytes) {
+    private List<TrackedLease<MemorySegment>> emptyBuffers(final int bytes) {
         final List<OpenableLease<MemorySegment>> leases = new LeaseMultiGet(pool).get(bytes);
         final List<TrackedLease<MemorySegment>> rv = new ArrayList<>(leases.size());
 
