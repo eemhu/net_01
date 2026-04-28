@@ -77,24 +77,24 @@ public final class WriteableTest {
             trackedLeases.add(new TrackedMemorySegmentLease(lease));
         }
 
-        final Writeable w = new StringWriteable(trackedLeases);
+        try (final Writeable w = new StringWriteable(trackedLeases)) {
+            Assertions.assertEquals(trackedLeases, w.memorySegmentLeases());
+            Assertions.assertEquals(1, w.memorySegmentLeases().size());
+            final TrackedLease<MemorySegment> lease = trackedLeases.getFirst();
 
-        Assertions.assertEquals(trackedLeases, w.memorySegmentLeases());
-        Assertions.assertEquals(1, w.memorySegmentLeases().size());
-        final TrackedLease<MemorySegment> lease = trackedLeases.getFirst();
+            int i;
+            for (i = 0; i < 128; i++) {
+                Assertions.assertTrue(w.hasRemaining());
+                Assertions.assertTrue(lease.hasNext());
+                lease.next();
+            }
 
-        int i;
-        for (i = 0; i < 128; i++) {
-            Assertions.assertTrue(w.hasRemaining());
-            Assertions.assertTrue(lease.hasNext());
-            lease.next();
+            Assertions.assertEquals(128, i);
+            Assertions.assertFalse(w.hasRemaining());
+            Assertions.assertFalse(lease.hasNext());
+
+            Assertions.assertThrows(IndexOutOfBoundsException.class, lease::next);
         }
-
-        Assertions.assertEquals(128, i);
-        Assertions.assertFalse(w.hasRemaining());
-        Assertions.assertFalse(lease.hasNext());
-
-        Assertions.assertThrows(IndexOutOfBoundsException.class, lease::next);
     }
 
     @Test
@@ -110,24 +110,24 @@ public final class WriteableTest {
             trackedLeases.add(new TrackedMemorySegmentLease(lease));
         }
 
-        final Writeable w = new StringWriteable(trackedLeases);
+        try (final Writeable w = new StringWriteable(trackedLeases)) {
+            Assertions.assertEquals(trackedLeases, w.memorySegmentLeases());
+            Assertions.assertEquals(1, w.memorySegmentLeases().size());
+            final TrackedLease<MemorySegment> lease = trackedLeases.getFirst();
+            lease.limit(32L);
 
-        Assertions.assertEquals(trackedLeases, w.memorySegmentLeases());
-        Assertions.assertEquals(1, w.memorySegmentLeases().size());
-        final TrackedLease<MemorySegment> lease = trackedLeases.getFirst();
-        lease.limit(32L);
+            int i;
+            for (i = 0; i < 32; i++) {
+                Assertions.assertTrue(w.hasRemaining());
+                Assertions.assertTrue(lease.hasNext());
+                lease.next();
+            }
 
-        int i;
-        for (i = 0; i < 32; i++) {
-            Assertions.assertTrue(w.hasRemaining());
-            Assertions.assertTrue(lease.hasNext());
-            lease.next();
+            Assertions.assertEquals(32, i);
+            Assertions.assertFalse(w.hasRemaining());
+            Assertions.assertFalse(lease.hasNext());
+
+            Assertions.assertThrows(IndexOutOfBoundsException.class, lease::next);
         }
-
-        Assertions.assertEquals(32, i);
-        Assertions.assertFalse(w.hasRemaining());
-        Assertions.assertFalse(lease.hasNext());
-
-        Assertions.assertThrows(IndexOutOfBoundsException.class, lease::next);
     }
 }
