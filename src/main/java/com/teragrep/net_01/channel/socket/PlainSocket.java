@@ -67,19 +67,19 @@ final class PlainSocket implements Socket {
     }
 
     @Override
-    public ReadResult read(List<TrackedLease<MemorySegment>> srcs) throws IOException {
-        final int size = srcs.size();
+    public ReadResult read(List<TrackedLease<MemorySegment>> dsts) throws IOException {
+        final int size = dsts.size();
         final List<TrackedLease<MemorySegment>> rv = new ArrayList<>(size);
         final ByteBuffer[] byteBuffers = new ByteBuffer[size];
         for (int i = 0; i < size; i++) {
-            byteBuffers[i] = srcs.get(i).leasedObject().asByteBuffer();
+            byteBuffers[i] = dsts.get(i).leasedObject().asByteBuffer();
         }
 
         final long readBytes = socketChannel.read(byteBuffers);
 
         long bytesLeft = readBytes;
         boolean allRead = false;
-        for (final TrackedLease<MemorySegment> bufferLease : srcs) {
+        for (final TrackedLease<MemorySegment> bufferLease : dsts) {
             final long byteSize = bufferLease.leasedObject().byteSize();
 
             if (!allRead && readBytes > 0) {
@@ -108,20 +108,20 @@ final class PlainSocket implements Socket {
     }
 
     @Override
-    public WrittenResult write(List<TrackedLease<MemorySegment>> leases) throws IOException {
-        final int size = leases.size();
+    public WrittenResult write(List<TrackedLease<MemorySegment>> dsts) throws IOException {
+        final int size = dsts.size();
         final ByteBuffer[] buffersToWrite = new ByteBuffer[size];
         final List<TrackedLease<MemorySegment>> rv = new ArrayList<>(size);
 
         for (int i = 0; i < size; i++) {
-            buffersToWrite[i] = leases.get(i).leasedObject().asByteBuffer();
+            buffersToWrite[i] = dsts.get(i).leasedObject().asByteBuffer();
         }
 
         final long bytesWritten = socketChannel.write(buffersToWrite);
 
         long bytesLeft = bytesWritten;
         boolean allWritten = false;
-        for (final TrackedLease<MemorySegment> bufferLease : leases) {
+        for (final TrackedLease<MemorySegment> bufferLease : dsts) {
             final long byteSize = bufferLease.leasedObject().byteSize();
 
             if (!allWritten && bytesWritten > 0) {

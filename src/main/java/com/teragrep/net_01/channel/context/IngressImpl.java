@@ -228,11 +228,9 @@ final class IngressImpl implements Ingress {
     }
 
     private long readData() throws IOException {
-        long readBytes;
+        final List<OpenableLease<MemorySegment>> bufferLeases = new LeaseMultiGet(memorySegmentLeasePool).get(4);
+        final List<TrackedLease<MemorySegment>> trackedMemorySegmentLeases = new LinkedList<>();
 
-        List<OpenableLease<MemorySegment>> bufferLeases = new LeaseMultiGet(memorySegmentLeasePool).get(4);
-
-        List<TrackedLease<MemorySegment>> trackedMemorySegmentLeases = new LinkedList<>();
         for (OpenableLease<MemorySegment> bufferLease : bufferLeases) {
             if (bufferLease.isStub()) {
                 continue;

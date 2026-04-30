@@ -60,11 +60,11 @@ public interface Socket {
     /**
      * Read data from a network connection.
      * 
-     * @param srcs {@link TrackedLease<MemorySegment>}s which are read to from the connection
+     * @param dsts {@link TrackedLease<MemorySegment>}s which are read to from the connection
      * @return amount of bytes read
      * @throws IOException if read fails
      */
-    ReadResult read(List<TrackedLease<MemorySegment>> srcs) throws IOException;
+    ReadResult read(List<TrackedLease<MemorySegment>> dsts) throws IOException;
 
     /**
      * Write data through a network connection.
