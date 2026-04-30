@@ -98,9 +98,9 @@ public final class ServerFactory {
         );
 
         ListenContext listenContext = listenContextFactory.open(new InetSocketAddress(port));
-        LOGGER.info("registering to eventLoop <{}>", eventLoop);
+        LOGGER.debug("registering to eventLoop <{}>", eventLoop);
         eventLoop.register(listenContext);
-        LOGGER.info("registered to eventLoop <{}>", eventLoop);
+        LOGGER.debug("registered to eventLoop <{}>", eventLoop);
         return new Server(listenContext);
     }
 }

@@ -93,7 +93,7 @@ public final class EventLoop implements AutoCloseable, Runnable {
     }
 
     private void registerPendingRegistrations() {
-        LOGGER.info("register pending regs");
+        LOGGER.debug("register pending regs");
         while (true) {
             Context context = pendingContextRegistrations.poll();
             if (context != null) {

@@ -182,7 +182,7 @@ final class EgressImpl implements Egress {
                 writeInProgressList.add(w);
             }
 
-            LOGGER.info("Writing to socket");
+            LOGGER.debug("Writing to socket");
 
             final WrittenResult result = establishedContext.socket().write(writeBuffers);
 
