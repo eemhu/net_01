@@ -69,14 +69,6 @@ public final class WriteableClosure implements Writeable {
 
     @Override
     public void close() {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER
-                    .debug(
-                            "Sent command <{}>, Closing connection to  PeerAddress <{}> PeerPort <{}>", "serverclose",
-                            establishedContext.socket().getTransportInfo().getPeerAddress(),
-                            establishedContext.socket().getTransportInfo().getPeerPort()
-                    );
-        }
         establishedContext.close();
         writeable.close();
     }
