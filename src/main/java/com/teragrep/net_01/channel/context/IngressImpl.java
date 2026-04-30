@@ -137,7 +137,7 @@ final class IngressImpl implements Ingress {
                     if (bufferLease.hasNext()) {
                         // return back as it has some remaining
                         LOGGER.debug("pushBack bufferLease id <{}>", bufferLease.id());
-                        activeBuffers.add(bufferLease);
+                        activeBuffers.addFirst(bufferLease);
                         if (LOGGER.isDebugEnabled()) {
                             LOGGER
                                     .debug(
