@@ -86,9 +86,9 @@ public final class WriteableLeaseful implements Writeable {
         // TODO subleases for fragments
         for (OpenableLease<MemorySegment> bufferLease : leases) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("releasing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
+                LOGGER.debug("closing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
             }
-            // FIXME: bufferLease.removeRef();
+
             try {
                 bufferLease.close();
             }
