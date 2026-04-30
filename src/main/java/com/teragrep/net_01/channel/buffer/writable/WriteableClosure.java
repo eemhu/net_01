@@ -51,7 +51,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.foreign.MemorySegment;
-import java.util.List;
 
 /**
  * Closes a connection at close()
@@ -83,7 +82,7 @@ public final class WriteableClosure implements Writeable {
     }
 
     @Override
-    public List<TrackedLease<MemorySegment>> memorySegmentLeases() {
+    public TrackedLease<MemorySegment>[] memorySegmentLeases() {
         return writeable.memorySegmentLeases();
     }
 

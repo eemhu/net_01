@@ -49,13 +49,12 @@ import com.teragrep.buf_01.buffer.lease.TrackedLease;
 import com.teragrep.net_01.channel.buffer.writable.Writeable;
 
 import java.lang.foreign.MemorySegment;
-import java.util.List;
 
 public final class StringWriteable implements Writeable {
 
-    private final List<TrackedLease<MemorySegment>> buffers;
+    private final TrackedLease<MemorySegment>[] buffers;
 
-    public StringWriteable(final List<TrackedLease<MemorySegment>> buffers) {
+    public StringWriteable(final TrackedLease<MemorySegment>[] buffers) {
         this.buffers = buffers;
     }
 
@@ -72,7 +71,7 @@ public final class StringWriteable implements Writeable {
     }
 
     @Override
-    public List<TrackedLease<MemorySegment>> memorySegmentLeases() {
+    public TrackedLease<MemorySegment>[] memorySegmentLeases() {
         return buffers;
     }
 

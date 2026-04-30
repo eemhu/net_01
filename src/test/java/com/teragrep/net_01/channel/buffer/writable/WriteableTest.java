@@ -59,7 +59,6 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.util.ArrayList;
 import java.util.List;
 
 public final class WriteableTest {
@@ -71,16 +70,16 @@ public final class WriteableTest {
         );
 
         final List<OpenableLease<MemorySegment>> leases = new LeaseMultiGet(pool).get(32L);
-        final List<TrackedLease<MemorySegment>> trackedLeases = new ArrayList<>(leases.size());
+        final TrackedLease<MemorySegment>[] trackedLeases = new TrackedMemorySegmentLease[leases.size()];
 
-        for (final OpenableLease<MemorySegment> lease : leases) {
-            trackedLeases.add(new TrackedMemorySegmentLease(lease));
+        for (int i = 0; i < leases.size(); i++) {
+            trackedLeases[i] = new TrackedMemorySegmentLease(leases.get(i));
         }
 
         try (final Writeable w = new StringWriteable(trackedLeases)) {
             Assertions.assertEquals(trackedLeases, w.memorySegmentLeases());
-            Assertions.assertEquals(1, w.memorySegmentLeases().size());
-            final TrackedLease<MemorySegment> lease = trackedLeases.getFirst();
+            Assertions.assertEquals(1, w.memorySegmentLeases().length);
+            final TrackedLease<MemorySegment> lease = trackedLeases[0];
 
             int i;
             for (i = 0; i < 128; i++) {
@@ -104,16 +103,16 @@ public final class WriteableTest {
         );
 
         final List<OpenableLease<MemorySegment>> leases = new LeaseMultiGet(pool).get(32L);
-        final List<TrackedLease<MemorySegment>> trackedLeases = new ArrayList<>(leases.size());
+        final TrackedLease<MemorySegment>[] trackedLeases = new TrackedMemorySegmentLease[leases.size()];
 
-        for (final OpenableLease<MemorySegment> lease : leases) {
-            trackedLeases.add(new TrackedMemorySegmentLease(lease));
+        for (int i = 0; i < leases.size(); i++) {
+            trackedLeases[i] = new TrackedMemorySegmentLease(leases.get(i));
         }
 
         try (final Writeable w = new StringWriteable(trackedLeases)) {
             Assertions.assertEquals(trackedLeases, w.memorySegmentLeases());
-            Assertions.assertEquals(1, w.memorySegmentLeases().size());
-            final TrackedLease<MemorySegment> lease = trackedLeases.getFirst();
+            Assertions.assertEquals(1, w.memorySegmentLeases().length);
+            final TrackedLease<MemorySegment> lease = trackedLeases[0];
             lease.limit(32L);
 
             int i;

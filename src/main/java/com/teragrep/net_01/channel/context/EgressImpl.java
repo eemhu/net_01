@@ -46,6 +46,7 @@
 package com.teragrep.net_01.channel.context;
 
 import com.teragrep.buf_01.buffer.lease.TrackedLease;
+import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 import com.teragrep.net_01.channel.buffer.writable.Writeable;
 import com.teragrep.net_01.channel.buffer.writable.WriteableStub;
 import com.teragrep.net_01.channel.socket.WrittenResult;
@@ -164,12 +165,20 @@ final class EgressImpl implements Egress {
     }
 
     private void transmit(final List<Writeable> toWriteList) throws IOException {
-
         try {
-            final List<TrackedLease<MemorySegment>> writeBuffers = new ArrayList<>();
-
+            int numberOfBuffers = 0;
             for (final Writeable w : toWriteList) {
-                writeBuffers.addAll(w.memorySegmentLeases());
+                numberOfBuffers += w.memorySegmentLeases().length;
+            }
+
+            final TrackedLease<MemorySegment>[] writeBuffers = new TrackedMemorySegmentLease[numberOfBuffers];
+
+            int i = 0;
+            for (final Writeable w : toWriteList) {
+                for (final TrackedLease<MemorySegment> lease : w.memorySegmentLeases()) {
+                    writeBuffers[i] = lease;
+                    i++;
+                }
                 writeInProgressList.add(w);
             }
 

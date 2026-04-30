@@ -46,11 +46,10 @@
 package com.teragrep.net_01.channel.socket;
 
 import com.teragrep.buf_01.buffer.lease.TrackedLease;
+import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.channels.SocketChannel;
-import java.util.Collections;
-import java.util.List;
 
 public class SocketFake implements Socket {
 
@@ -61,13 +60,13 @@ public class SocketFake implements Socket {
     }
 
     @Override
-    public ReadResult read(List<TrackedLease<MemorySegment>> dsts) {
-        return new ReadResult(0, Collections.emptyList());
+    public ReadResult read(TrackedLease<MemorySegment>[] dsts) {
+        return new ReadResult(0, new TrackedMemorySegmentLease[0]);
     }
 
     @Override
-    public WrittenResult write(List<TrackedLease<MemorySegment>> dsts) {
-        return new WrittenResult(0, Collections.emptyList());
+    public WrittenResult write(TrackedLease<MemorySegment>[] dsts) {
+        return new WrittenResult(0, new TrackedMemorySegmentLease[0]);
     }
 
     @Override

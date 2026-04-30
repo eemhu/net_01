@@ -55,7 +55,6 @@ import com.teragrep.net_01.channel.context.StringWriteable;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 
 public final class StringToLease {
@@ -72,12 +71,13 @@ public final class StringToLease {
         return new StringWriteable(toLeases());
     }
 
-    public List<TrackedLease<MemorySegment>> toLeases() {
+    public TrackedLease<MemorySegment>[] toLeases() {
         final byte[] bytes = origin.getBytes(StandardCharsets.UTF_8);
         final List<OpenableLease<MemorySegment>> leases = new LeaseMultiGet(pool).get(bytes.length);
-        final List<TrackedLease<MemorySegment>> trackedLeases = new ArrayList<>(leases.size());
-        for (final OpenableLease<MemorySegment> lease : leases) {
-            trackedLeases.add(new TrackedMemorySegmentLease(lease));
+        final TrackedLease<MemorySegment>[] trackedLeases = new TrackedMemorySegmentLease[leases.size()];
+
+        for (int i = 0; i < leases.size(); i++) {
+            trackedLeases[i] = new TrackedMemorySegmentLease(leases.get(i));
         }
 
         int i = 0;

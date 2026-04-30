@@ -59,6 +59,7 @@ import tlschannel.NeedsWriteException;
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
 import java.nio.channels.CancelledKeyException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -229,18 +230,20 @@ final class IngressImpl implements Ingress {
 
     private long readData() throws IOException {
         final List<OpenableLease<MemorySegment>> bufferLeases = new LeaseMultiGet(memorySegmentLeasePool).get(4);
-        final List<TrackedLease<MemorySegment>> trackedMemorySegmentLeases = new LinkedList<>();
+        final int size = bufferLeases.size();
+        final TrackedLease<MemorySegment>[] trackedMemorySegmentLeases = new TrackedMemorySegmentLease[size];
 
-        for (OpenableLease<MemorySegment> bufferLease : bufferLeases) {
+        for (int i = 0; i < size; i++) {
+            final OpenableLease<MemorySegment> bufferLease = bufferLeases.get(i);
             if (bufferLease.isStub()) {
                 continue;
             }
-            trackedMemorySegmentLeases.add(new TrackedMemorySegmentLease(bufferLease));
+            trackedMemorySegmentLeases[i] = new TrackedMemorySegmentLease(bufferLease);
         }
 
         final ReadResult result = establishedContext.socket().read(trackedMemorySegmentLeases);
 
-        activeBuffers.addAll(result.leases());
+        activeBuffers.addAll(Arrays.asList(result.leases()));
 
         LOGGER.debug("establishedContext.read got <{}> bytes from socket", result.bytes());
 

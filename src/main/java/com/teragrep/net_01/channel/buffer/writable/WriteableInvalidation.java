@@ -48,7 +48,6 @@ package com.teragrep.net_01.channel.buffer.writable;
 import com.teragrep.buf_01.buffer.lease.TrackedLease;
 
 import java.lang.foreign.MemorySegment;
-import java.util.List;
 
 /**
  * Decoration of {@link Writeable} Invalidates a writable so TrackedLeases' position and limit is set to zero and the
@@ -78,7 +77,7 @@ public final class WriteableInvalidation implements Writeable {
     }
 
     @Override
-    public List<TrackedLease<MemorySegment>> memorySegmentLeases() {
+    public TrackedLease<MemorySegment>[] memorySegmentLeases() {
         return writeable.memorySegmentLeases();
     }
 

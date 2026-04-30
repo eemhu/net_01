@@ -49,14 +49,13 @@ import com.teragrep.buf_01.buffer.lease.TrackedLease;
 
 import java.io.Closeable;
 import java.lang.foreign.MemorySegment;
-import java.util.List;
 
 public interface Writeable extends Closeable {
 
     @Override
     void close();
 
-    List<TrackedLease<MemorySegment>> memorySegmentLeases();
+    TrackedLease<MemorySegment>[] memorySegmentLeases();
 
     boolean hasRemaining();
 

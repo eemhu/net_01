@@ -66,7 +66,7 @@ public final class WriteableLeaseful implements Writeable {
     }
 
     @Override
-    public List<TrackedLease<MemorySegment>> memorySegmentLeases() {
+    public TrackedLease<MemorySegment>[] memorySegmentLeases() {
         return writeable.memorySegmentLeases();
     }
 

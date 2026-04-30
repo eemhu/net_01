@@ -50,7 +50,6 @@ import com.teragrep.buf_01.buffer.lease.TrackedLease;
 import java.io.IOException;
 import java.lang.foreign.MemorySegment;
 import java.nio.channels.SocketChannel;
-import java.util.List;
 
 /**
  * {@link Socket} provides network connectivity methods
@@ -64,7 +63,7 @@ public interface Socket {
      * @return amount of bytes read
      * @throws IOException if read fails
      */
-    ReadResult read(List<TrackedLease<MemorySegment>> dsts) throws IOException;
+    ReadResult read(TrackedLease<MemorySegment>[] dsts) throws IOException;
 
     /**
      * Write data through a network connection.
@@ -73,7 +72,7 @@ public interface Socket {
      * @return amount of bytes written
      * @throws IOException if write fails
      */
-    WrittenResult write(List<TrackedLease<MemorySegment>> dsts) throws IOException;
+    WrittenResult write(TrackedLease<MemorySegment>[] dsts) throws IOException;
 
     /**
      * Provides information about a network connection

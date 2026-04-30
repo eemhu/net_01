@@ -63,7 +63,6 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
-import java.util.ArrayList;
 import java.util.List;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -146,7 +145,7 @@ public final class SocketTest {
 
             out.println("worldHello");
 
-            List<TrackedLease<MemorySegment>> bufs = emptyBuffers(10);
+            TrackedLease<MemorySegment>[] bufs = emptyBuffers(10);
             ReadResult res = socket.read(bufs);
 
             Assertions.assertEquals("worldHello\n", bufferToString(res.leases()));
@@ -157,7 +156,7 @@ public final class SocketTest {
         });
     }
 
-    private String bufferToString(final List<TrackedLease<MemorySegment>> leases) {
+    private String bufferToString(final TrackedLease<MemorySegment>[] leases) {
         final StringBuilder stringBuilder = new StringBuilder();
         for (final TrackedLease<MemorySegment> buf : leases) {
             while (buf.hasNext()) {
@@ -167,13 +166,13 @@ public final class SocketTest {
         return stringBuilder.toString();
     }
 
-    private List<TrackedLease<MemorySegment>> emptyBuffers(final int bytes) {
+    private TrackedLease<MemorySegment>[] emptyBuffers(final int bytes) {
         final List<OpenableLease<MemorySegment>> leases = new LeaseMultiGet(pool).get(bytes);
-        final List<TrackedLease<MemorySegment>> rv = new ArrayList<>(leases.size());
+        final TrackedLease<MemorySegment>[] rv = new TrackedMemorySegmentLease[leases.size()];
 
-        leases.forEach(lease -> {
-            rv.add(new TrackedMemorySegmentLease(lease));
-        });
+        for (int i = 0; i < leases.size(); i++) {
+            rv[i] = new TrackedMemorySegmentLease(leases.get(i));
+        }
 
         return rv;
     }
