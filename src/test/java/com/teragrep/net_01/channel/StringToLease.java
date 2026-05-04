@@ -50,6 +50,7 @@ import com.teragrep.buf_01.buffer.lease.TrackedLease;
 import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 import com.teragrep.buf_01.buffer.pool.LeaseMultiGet;
 import com.teragrep.buf_01.buffer.pool.OpeningPool;
+import com.teragrep.buf_01.buffer.pool.TrackedLeaseMultiGet;
 import com.teragrep.net_01.channel.buffer.writable.Writeable;
 import com.teragrep.net_01.channel.context.StringWriteable;
 
@@ -73,12 +74,7 @@ public final class StringToLease {
 
     public TrackedLease<MemorySegment>[] toLeases() {
         final byte[] bytes = origin.getBytes(StandardCharsets.UTF_8);
-        final List<OpenableLease<MemorySegment>> leases = new LeaseMultiGet(pool).get(bytes.length);
-        final TrackedLease<MemorySegment>[] trackedLeases = new TrackedMemorySegmentLease[leases.size()];
-
-        for (int i = 0; i < leases.size(); i++) {
-            trackedLeases[i] = new TrackedMemorySegmentLease(leases.get(i));
-        }
+        final TrackedLease<MemorySegment>[] trackedLeases = new TrackedLeaseMultiGet(new LeaseMultiGet(pool)).getAsArray(bytes.length);
 
         int i = 0;
         for (final TrackedLease<MemorySegment> trackedLease : trackedLeases) {

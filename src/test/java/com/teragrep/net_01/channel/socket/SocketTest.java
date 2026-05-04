@@ -51,6 +51,7 @@ import com.teragrep.buf_01.buffer.lease.TrackedLease;
 import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 import com.teragrep.buf_01.buffer.pool.LeaseMultiGet;
 import com.teragrep.buf_01.buffer.pool.OpeningPool;
+import com.teragrep.buf_01.buffer.pool.TrackedLeaseMultiGet;
 import com.teragrep.buf_01.buffer.supply.ArenaMemorySegmentLeaseSupplier;
 import com.teragrep.net_01.channel.StringToLease;
 import com.teragrep.poj_01.pool.UnboundPool;
@@ -167,13 +168,6 @@ public final class SocketTest {
     }
 
     private TrackedLease<MemorySegment>[] emptyBuffers(final int bytes) {
-        final List<OpenableLease<MemorySegment>> leases = new LeaseMultiGet(pool).get(bytes);
-        final TrackedLease<MemorySegment>[] rv = new TrackedMemorySegmentLease[leases.size()];
-
-        for (int i = 0; i < leases.size(); i++) {
-            rv[i] = new TrackedMemorySegmentLease(leases.get(i));
-        }
-
-        return rv;
+        return new TrackedLeaseMultiGet(new LeaseMultiGet(pool)).getAsArray(bytes);
     }
 }

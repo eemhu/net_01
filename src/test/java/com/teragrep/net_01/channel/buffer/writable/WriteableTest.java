@@ -51,6 +51,7 @@ import com.teragrep.buf_01.buffer.lease.TrackedLease;
 import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 import com.teragrep.buf_01.buffer.pool.LeaseMultiGet;
 import com.teragrep.buf_01.buffer.pool.OpeningPool;
+import com.teragrep.buf_01.buffer.pool.TrackedLeaseMultiGet;
 import com.teragrep.buf_01.buffer.supply.ArenaMemorySegmentLeaseSupplier;
 import com.teragrep.net_01.channel.context.StringWriteable;
 import com.teragrep.poj_01.pool.UnboundPool;
@@ -69,12 +70,7 @@ public final class WriteableTest {
                 new UnboundPool<>(new ArenaMemorySegmentLeaseSupplier(Arena.ofShared(), 128), new MemorySegmentLeaseStub())
         );
 
-        final List<OpenableLease<MemorySegment>> leases = new LeaseMultiGet(pool).get(32L);
-        final TrackedLease<MemorySegment>[] trackedLeases = new TrackedMemorySegmentLease[leases.size()];
-
-        for (int i = 0; i < leases.size(); i++) {
-            trackedLeases[i] = new TrackedMemorySegmentLease(leases.get(i));
-        }
+        final TrackedLease<MemorySegment>[] trackedLeases = new TrackedLeaseMultiGet(new LeaseMultiGet(pool)).getAsArray(32L);
 
         try (final Writeable w = new StringWriteable(trackedLeases)) {
             Assertions.assertEquals(trackedLeases, w.memorySegmentLeases());
@@ -102,12 +98,7 @@ public final class WriteableTest {
                 new UnboundPool<>(new ArenaMemorySegmentLeaseSupplier(Arena.ofShared(), 128), new MemorySegmentLeaseStub())
         );
 
-        final List<OpenableLease<MemorySegment>> leases = new LeaseMultiGet(pool).get(32L);
-        final TrackedLease<MemorySegment>[] trackedLeases = new TrackedMemorySegmentLease[leases.size()];
-
-        for (int i = 0; i < leases.size(); i++) {
-            trackedLeases[i] = new TrackedMemorySegmentLease(leases.get(i));
-        }
+        final TrackedLease<MemorySegment>[] trackedLeases = new TrackedLeaseMultiGet(new LeaseMultiGet(pool)).getAsArray(32L);
 
         try (final Writeable w = new StringWriteable(trackedLeases)) {
             Assertions.assertEquals(trackedLeases, w.memorySegmentLeases());

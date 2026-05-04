@@ -49,6 +49,7 @@ import com.teragrep.buf_01.buffer.lease.OpenableLease;
 import com.teragrep.buf_01.buffer.lease.TrackedLease;
 import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 import com.teragrep.buf_01.buffer.pool.LeaseMultiGet;
+import com.teragrep.buf_01.buffer.pool.TrackedLeaseMultiGet;
 import com.teragrep.net_01.channel.socket.ReadResult;
 import com.teragrep.poj_01.pool.Pool;
 import org.slf4j.Logger;
@@ -229,19 +230,9 @@ final class IngressImpl implements Ingress {
     }
 
     private long readData() throws IOException {
-        final List<OpenableLease<MemorySegment>> bufferLeases = new LeaseMultiGet(memorySegmentLeasePool).get(4);
-        final int size = bufferLeases.size();
-        final TrackedLease<MemorySegment>[] trackedMemorySegmentLeases = new TrackedMemorySegmentLease[size];
+        final TrackedLease<MemorySegment>[] bufferLeases = new TrackedLeaseMultiGet(new LeaseMultiGet(memorySegmentLeasePool)).getAsArray(4);
 
-        for (int i = 0; i < size; i++) {
-            final OpenableLease<MemorySegment> bufferLease = bufferLeases.get(i);
-            if (bufferLease.isStub()) {
-                continue;
-            }
-            trackedMemorySegmentLeases[i] = new TrackedMemorySegmentLease(bufferLease);
-        }
-
-        final ReadResult result = establishedContext.socket().read(trackedMemorySegmentLeases);
+        final ReadResult result = establishedContext.socket().read(bufferLeases);
 
         activeBuffers.addAll(Arrays.asList(result.leases()));
 
