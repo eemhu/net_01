@@ -72,6 +72,7 @@ final class TLSSocket implements Socket {
         final int size = dsts.length;
         final TrackedLease<MemorySegment>[] rv = new TrackedMemorySegmentLease[size];
         final ByteBuffer[] byteBuffers = new ByteBuffer[size];
+
         for (int i = 0; i < size; i++) {
             byteBuffers[i] = dsts[i].leasedObject().asByteBuffer();
         }
@@ -79,33 +80,25 @@ final class TLSSocket implements Socket {
         final long readBytes = tlsChannel.read(byteBuffers);
 
         long bytesLeft = readBytes;
-        boolean allRead = false;
         for (int i = 0; i < size; i++) {
             final TrackedLease<MemorySegment> bufferLease = dsts[i];
             final long byteSize = bufferLease.leasedObject().byteSize();
 
-            if (!allRead && readBytes > 0) {
-                // same as ByteBuffer.flip()
-                final long diff = bytesLeft - byteSize;
-                if (diff < 0) {
-                    // mem.segment bigger than bytes left.
-                    // set limit to read amount.
-                    final long limit = byteSize - Math.abs(diff);
-                    bufferLease.position(0L);
-                    bufferLease.limit(limit);
-                    rv[i] = bufferLease;
-                }
-                else {
-                    //else: full mem.segment used, no need to set limit.
-                    rv[i] = bufferLease;
-                }
-            }
-
-            bytesLeft -= byteSize;
-
             if (bytesLeft <= 0) {
-                allRead = true;
+                break;
             }
+
+            // same as ByteBuffer.flip()
+            final long diff = bytesLeft - byteSize;
+            if (diff < 0) {
+                // mem.segment bigger than bytes left.
+                // set limit to read amount.
+                final long limit = byteSize - Math.abs(diff);
+                bufferLease.position(0L);
+                bufferLease.limit(limit);
+            }
+            rv[i] = bufferLease;
+            bytesLeft -= byteSize;
         }
 
         return new ReadResult(readBytes, rv);
@@ -124,34 +117,25 @@ final class TLSSocket implements Socket {
         final long bytesWritten = tlsChannel.write(buffersToWrite);
 
         long bytesLeft = bytesWritten;
-        boolean allWritten = false;
-
         for (int i = 0; i < size; i++) {
             final TrackedLease<MemorySegment> bufferLease = dsts[i];
             final long byteSize = bufferLease.leasedObject().byteSize();
 
-            if (!allWritten && bytesWritten > 0) {
-                // same as ByteBuffer.flip()
-                final long diff = bytesLeft - byteSize;
-                if (diff < 0) {
-                    // mem.segment bigger than bytes left.
-                    // set limit to written amount.
-                    final long limit = byteSize - Math.abs(diff);
-                    bufferLease.position(0L);
-                    bufferLease.limit(limit);
-                    rv[i] = bufferLease;
-                }
-                else {
-                    //else: full mem.segment used, no need to set limit.
-                    rv[i] = bufferLease;
-                }
-            }
-
-            bytesLeft -= byteSize;
-
             if (bytesLeft <= 0) {
-                allWritten = true;
+                break;
             }
+
+            // same as ByteBuffer.flip()
+            final long diff = bytesLeft - byteSize;
+            if (diff < 0) {
+                // mem.segment bigger than bytes left.
+                // set limit to written amount.
+                final long limit = byteSize - Math.abs(diff);
+                bufferLease.position(0L);
+                bufferLease.limit(limit);
+            }
+            rv[i] = bufferLease;
+            bytesLeft -= byteSize;
         }
 
         return new WrittenResult(bytesWritten, rv);
