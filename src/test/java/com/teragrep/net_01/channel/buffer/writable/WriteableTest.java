@@ -46,9 +46,7 @@
 package com.teragrep.net_01.channel.buffer.writable;
 
 import com.teragrep.buf_01.buffer.lease.MemorySegmentLeaseStub;
-import com.teragrep.buf_01.buffer.lease.OpenableLease;
 import com.teragrep.buf_01.buffer.lease.TrackedLease;
-import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 import com.teragrep.buf_01.buffer.pool.LeaseMultiGet;
 import com.teragrep.buf_01.buffer.pool.OpeningPool;
 import com.teragrep.buf_01.buffer.pool.TrackedLeaseMultiGet;
@@ -60,7 +58,6 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.util.List;
 
 public final class WriteableTest {
 
@@ -70,7 +67,8 @@ public final class WriteableTest {
                 new UnboundPool<>(new ArenaMemorySegmentLeaseSupplier(Arena.ofShared(), 128), new MemorySegmentLeaseStub())
         );
 
-        final TrackedLease<MemorySegment>[] trackedLeases = new TrackedLeaseMultiGet(new LeaseMultiGet(pool)).getAsArray(32L);
+        final TrackedLease<MemorySegment>[] trackedLeases = new TrackedLeaseMultiGet(new LeaseMultiGet(pool))
+                .getAsArray(32L);
 
         try (final Writeable w = new StringWriteable(trackedLeases)) {
             Assertions.assertEquals(trackedLeases, w.memorySegmentLeases());
@@ -98,7 +96,8 @@ public final class WriteableTest {
                 new UnboundPool<>(new ArenaMemorySegmentLeaseSupplier(Arena.ofShared(), 128), new MemorySegmentLeaseStub())
         );
 
-        final TrackedLease<MemorySegment>[] trackedLeases = new TrackedLeaseMultiGet(new LeaseMultiGet(pool)).getAsArray(32L);
+        final TrackedLease<MemorySegment>[] trackedLeases = new TrackedLeaseMultiGet(new LeaseMultiGet(pool))
+                .getAsArray(32L);
 
         try (final Writeable w = new StringWriteable(trackedLeases)) {
             Assertions.assertEquals(trackedLeases, w.memorySegmentLeases());

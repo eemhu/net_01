@@ -47,7 +47,6 @@ package com.teragrep.net_01.channel.context;
 
 import com.teragrep.buf_01.buffer.lease.OpenableLease;
 import com.teragrep.buf_01.buffer.lease.TrackedLease;
-import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 import com.teragrep.buf_01.buffer.pool.LeaseMultiGet;
 import com.teragrep.buf_01.buffer.pool.TrackedLeaseMultiGet;
 import com.teragrep.net_01.channel.socket.ReadResult;
@@ -230,7 +229,9 @@ final class IngressImpl implements Ingress {
     }
 
     private long readData() throws IOException {
-        final TrackedLease<MemorySegment>[] bufferLeases = new TrackedLeaseMultiGet(new LeaseMultiGet(memorySegmentLeasePool)).getAsArray(4);
+        final TrackedLease<MemorySegment>[] bufferLeases = new TrackedLeaseMultiGet(
+                new LeaseMultiGet(memorySegmentLeasePool)
+        ).getAsArray(4);
 
         final ReadResult result = establishedContext.socket().read(bufferLeases);
 

@@ -46,9 +46,7 @@
 package com.teragrep.net_01.channel.socket;
 
 import com.teragrep.buf_01.buffer.lease.MemorySegmentLeaseStub;
-import com.teragrep.buf_01.buffer.lease.OpenableLease;
 import com.teragrep.buf_01.buffer.lease.TrackedLease;
-import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 import com.teragrep.buf_01.buffer.pool.LeaseMultiGet;
 import com.teragrep.buf_01.buffer.pool.OpeningPool;
 import com.teragrep.buf_01.buffer.pool.TrackedLeaseMultiGet;
@@ -64,7 +62,6 @@ import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
-import java.util.List;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public final class SocketTest {

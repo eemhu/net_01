@@ -64,14 +64,9 @@ public final class WriteableInvalidation implements Writeable {
     @Override
     public void close() {
         for (final TrackedLease<MemorySegment> lease : memorySegmentLeases()) {
-            try {
-                lease.position(0L);
-                lease.limit(0L);
-                lease.close();
-            }
-            catch (final Exception e) {
-                throw new RuntimeException("Error occurred whilst closing lease", e);
-            }
+            lease.position(0L);
+            lease.limit(0L);
+            lease.close();
         }
         writeable.close();
     }
