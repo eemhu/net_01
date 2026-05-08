@@ -47,8 +47,8 @@ package com.teragrep.net_01.channel.context;
 
 import com.teragrep.buf_01.buffer.lease.TrackedLease;
 import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
-import com.teragrep.net_01.channel.buffer.writable.Writeable;
-import com.teragrep.net_01.channel.buffer.writable.WriteableStub;
+import com.teragrep.buf_01.buffer.lease.collection.TrackedLeaseCollection;
+import com.teragrep.buf_01.buffer.lease.collection.TrackedMemorySegmentLeaseCollectionStub;
 import com.teragrep.net_01.channel.socket.WrittenResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,15 +76,15 @@ final class EgressImpl implements Egress {
 
     private final EstablishedContext establishedContext;
 
-    private final ConcurrentLinkedQueue<Writeable> queue;
-    private final ArrayList<Writeable> writeInProgressList; // lock protected
+    private final ConcurrentLinkedQueue<TrackedLeaseCollection<MemorySegment>> queue;
+    private final ArrayList<TrackedLeaseCollection<MemorySegment>> writeInProgressList; // lock protected
 
     private final Lock lock;
 
     // tls
     private final AtomicBoolean needRead;
 
-    private final List<Writeable> toWriteList;
+    private final List<TrackedLeaseCollection<MemorySegment>> toWriteList;
 
     EgressImpl(EstablishedContext establishedContext) {
         this.establishedContext = establishedContext;
@@ -98,18 +98,18 @@ final class EgressImpl implements Egress {
 
     // this must be thread-safe!
     @Override
-    public void accept(Writeable writeable) {
+    public void accept(TrackedLeaseCollection<MemorySegment> coll) {
 
-        if (!writeable.isStub()) {
-            queue.add(writeable);
+        if (!coll.isStub()) {
+            queue.add(coll);
         }
 
         while (queue.peek() != null) {
             if (lock.tryLock()) {
                 try {
                     while (true) {
-                        Writeable w = queue.poll();
-                        if (w != null) {
+                        final TrackedLeaseCollection<MemorySegment> c = queue.poll();
+                        if (c != null) {
                             if (LOGGER.isTraceEnabled()) {
                                 LOGGER
                                         .trace(
@@ -117,7 +117,7 @@ final class EgressImpl implements Egress {
                                                 toWriteList.size(), writeInProgressList.size()
                                         );
                             }
-                            toWriteList.add(w);
+                            toWriteList.add(c);
                         }
                         else {
                             break;
@@ -164,18 +164,18 @@ final class EgressImpl implements Egress {
         }
     }
 
-    private void transmit(final List<Writeable> toWriteList) throws IOException {
+    private void transmit(final List<TrackedLeaseCollection<MemorySegment>> toWriteList) throws IOException {
         try {
             int numberOfBuffers = 0;
-            for (final Writeable w : toWriteList) {
-                numberOfBuffers += w.memorySegmentLeases().length;
+            for (final TrackedLeaseCollection<MemorySegment> w : toWriteList) {
+                numberOfBuffers += w.leases().length;
             }
 
             final TrackedLease<MemorySegment>[] writeBuffers = new TrackedMemorySegmentLease[numberOfBuffers];
 
             int i = 0;
-            for (final Writeable w : toWriteList) {
-                for (final TrackedLease<MemorySegment> lease : w.memorySegmentLeases()) {
+            for (final TrackedLeaseCollection<MemorySegment> w : toWriteList) {
+                for (final TrackedLease<MemorySegment> lease : w.leases()) {
                     writeBuffers[i] = lease;
                     i++;
                 }
@@ -188,10 +188,10 @@ final class EgressImpl implements Egress {
 
             LOGGER.info("Transmit <{}> byte(s) to socket", result.bytes());
             // remove written ones
-            Iterator<Writeable> writeableIterator = writeInProgressList.iterator();
+            final Iterator<TrackedLeaseCollection<MemorySegment>> writeableIterator = writeInProgressList.iterator();
             while (writeableIterator.hasNext()) {
-                Writeable w = writeableIterator.next();
-                if (!w.hasRemaining()) {
+                final TrackedLeaseCollection<MemorySegment> w = writeableIterator.next();
+                if (!w.hasNext()) {
                     LOGGER.debug("complete write, closing written writeable");
                     w.close();
                     writeableIterator.remove();
@@ -202,18 +202,18 @@ final class EgressImpl implements Egress {
                 }
             }
         }
-        catch (NeedsReadException nre) {
+        catch (final NeedsReadException nre) {
             needRead.set(true);
             establishedContext.interestOps().add(OP_READ);
         }
-        catch (NeedsWriteException nwe) {
+        catch (final NeedsWriteException nwe) {
             establishedContext.interestOps().add(OP_WRITE);
         }
     }
 
     @Override
     public void run() {
-        accept(new WriteableStub());
+        accept(new TrackedMemorySegmentLeaseCollectionStub());
     }
 
     @Override

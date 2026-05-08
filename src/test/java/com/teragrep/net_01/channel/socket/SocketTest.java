@@ -47,9 +47,9 @@ package com.teragrep.net_01.channel.socket;
 
 import com.teragrep.buf_01.buffer.lease.MemorySegmentLeaseStub;
 import com.teragrep.buf_01.buffer.lease.TrackedLease;
-import com.teragrep.buf_01.buffer.pool.LeaseMultiGet;
+import com.teragrep.buf_01.buffer.pool.get.LeaseMultiGet;
 import com.teragrep.buf_01.buffer.pool.OpeningPool;
-import com.teragrep.buf_01.buffer.pool.TrackedLeaseMultiGet;
+import com.teragrep.buf_01.buffer.pool.get.TrackedLeaseMultiGet;
 import com.teragrep.buf_01.buffer.supply.ArenaMemorySegmentLeaseSupplier;
 import com.teragrep.net_01.channel.StringToLease;
 import com.teragrep.poj_01.pool.UnboundPool;
@@ -115,7 +115,7 @@ public final class SocketTest {
             // Init PlainSocket
             final Socket socket = new PlainSocket(socketCh.accept());
 
-            socket.write(new StringToLease("helloWorld\n", pool).toLeases());
+            socket.write(new StringToLease("helloWorld\n", pool).toCollection().leases());
 
             final String readLine = in.readLine();
 

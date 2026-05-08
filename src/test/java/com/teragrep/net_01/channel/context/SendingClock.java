@@ -46,9 +46,9 @@
 package com.teragrep.net_01.channel.context;
 
 import com.teragrep.buf_01.buffer.lease.TrackedLease;
+import com.teragrep.buf_01.buffer.lease.collection.TrackedLeaseCollection;
 import com.teragrep.buf_01.buffer.pool.OpeningPool;
 import com.teragrep.net_01.channel.StringToLease;
-import com.teragrep.net_01.channel.buffer.writable.Writeable;
 
 import java.lang.foreign.MemorySegment;
 import java.util.function.Consumer;
@@ -75,14 +75,14 @@ public final class SendingClock implements Clock {
 
         final String str = stringBuilder.toString();
 
-        final Writeable w = new StringToLease(str, pool).toWriteable();
-        ctx.egress().accept(w);
+        final TrackedLeaseCollection<MemorySegment> c = new StringToLease(str, pool).toCollection();
+        ctx.egress().accept(c);
 
         consumer.accept(str);
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         // no-op
     }
 }
