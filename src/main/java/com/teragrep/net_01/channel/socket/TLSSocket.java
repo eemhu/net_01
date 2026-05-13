@@ -79,26 +79,16 @@ final class TLSSocket implements Socket {
 
         final long readBytes = tlsChannel.read(byteBuffers);
 
-        long bytesLeft = readBytes;
         for (int i = 0; i < size; i++) {
-            final TrackedLease<MemorySegment> bufferLease = dsts[i];
-            final long byteSize = bufferLease.leasedObject().byteSize();
+            final TrackedLease<MemorySegment> lease = dsts[i];
+            final ByteBuffer byteBuffer = byteBuffers[i];
 
-            if (bytesLeft <= 0) {
-                break;
-            }
+            lease.position(byteBuffer.position());
+            lease.limit(byteBuffer.limit());
 
-            // same as ByteBuffer.flip()
-            final long diff = bytesLeft - byteSize;
-            if (diff < 0) {
-                // mem.segment bigger than bytes left.
-                // set limit to read amount.
-                final long limit = byteSize - Math.abs(diff);
-                bufferLease.position(0L);
-                bufferLease.limit(limit);
-            }
-            rv[i] = bufferLease;
-            bytesLeft -= byteSize;
+            lease.flip();
+
+            rv[i] = lease;
         }
 
         return new ReadResult(readBytes, rv);
@@ -116,26 +106,16 @@ final class TLSSocket implements Socket {
 
         final long bytesWritten = tlsChannel.write(buffersToWrite);
 
-        long bytesLeft = bytesWritten;
         for (int i = 0; i < size; i++) {
-            final TrackedLease<MemorySegment> bufferLease = dsts[i];
-            final long byteSize = bufferLease.leasedObject().byteSize();
+            final TrackedLease<MemorySegment> lease = dsts[i];
+            final ByteBuffer byteBuffer = buffersToWrite[i];
 
-            if (bytesLeft <= 0) {
-                break;
-            }
+            lease.position(byteBuffer.position());
+            lease.limit(byteBuffer.limit());
 
-            // same as ByteBuffer.flip()
-            final long diff = bytesLeft - byteSize;
-            if (diff < 0) {
-                // mem.segment bigger than bytes left.
-                // set limit to written amount.
-                final long limit = byteSize - Math.abs(diff);
-                bufferLease.position(0L);
-                bufferLease.limit(limit);
-            }
-            rv[i] = bufferLease;
-            bytesLeft -= byteSize;
+            lease.flip();
+
+            rv[i] = lease;
         }
 
         return new WrittenResult(bytesWritten, rv);
