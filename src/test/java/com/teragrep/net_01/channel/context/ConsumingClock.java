@@ -73,7 +73,7 @@ public final class ConsumingClock implements Clock {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         // no-op
     }
 }

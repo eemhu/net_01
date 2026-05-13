@@ -45,22 +45,44 @@
  */
 package com.teragrep.net_01.channel.context;
 
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
+import com.teragrep.buf_01.buffer.lease.collection.TrackedLeaseCollection;
 import com.teragrep.buf_01.buffer.pool.OpeningPool;
+import com.teragrep.net_01.channel.StringToLease;
 
+import java.lang.foreign.MemorySegment;
 import java.util.function.Consumer;
 
-public final class SendingClockFactory implements ClockFactory {
+public final class EchoingClock implements Clock {
 
+    private final EstablishedContext ctx;
     private final Consumer<String> consumer;
     private final OpeningPool pool;
 
-    public SendingClockFactory(final Consumer<String> consumer, final OpeningPool pool) {
+    public EchoingClock(final EstablishedContext ctx, final Consumer<String> consumer, final OpeningPool pool) {
+        this.ctx = ctx;
         this.consumer = consumer;
         this.pool = pool;
     }
 
     @Override
-    public Clock create(final EstablishedContext establishedContext) {
-        return new SendingClock(establishedContext, consumer, pool);
+    public void advance(final TrackedLease<MemorySegment> bufferLease) {
+        final StringBuilder stringBuilder = new StringBuilder();
+        while (bufferLease.hasNext()) {
+            final char c = (char) bufferLease.next();
+            stringBuilder.append(c);
+        }
+
+        final String str = stringBuilder.toString();
+
+        final TrackedLeaseCollection<MemorySegment> c = new StringToLease(str, pool).toCollection();
+        ctx.egress().accept(c);
+
+        consumer.accept(str);
+    }
+
+    @Override
+    public void close() {
+        // no-op
     }
 }

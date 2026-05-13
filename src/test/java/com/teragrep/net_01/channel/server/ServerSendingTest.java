@@ -49,7 +49,7 @@ import com.teragrep.buf_01.buffer.lease.MemorySegmentLeaseStub;
 import com.teragrep.buf_01.buffer.pool.OpeningPool;
 import com.teragrep.buf_01.buffer.supply.ArenaMemorySegmentLeaseSupplier;
 import com.teragrep.net_01.channel.context.ClockFactory;
-import com.teragrep.net_01.channel.context.SendingClockFactory;
+import com.teragrep.net_01.channel.context.EchoingClockFactory;
 import com.teragrep.net_01.channel.socket.PlainFactory;
 import com.teragrep.net_01.channel.socket.SocketFactory;
 import com.teragrep.net_01.eventloop.EventLoop;
@@ -81,7 +81,7 @@ public final class ServerSendingTest {
         this.pool = new OpeningPool(
                 new UnboundPool<>(new ArenaMemorySegmentLeaseSupplier(Arena.ofShared(), 128), new MemorySegmentLeaseStub())
         );
-        final ClockFactory clockFactory = new SendingClockFactory((msgStr) -> countDownLatch.countDown(), pool);
+        final ClockFactory clockFactory = new EchoingClockFactory((msgStr) -> countDownLatch.countDown(), pool);
 
         final EventLoop el = Assertions.assertDoesNotThrow(eventLoopFactory::create);
 
