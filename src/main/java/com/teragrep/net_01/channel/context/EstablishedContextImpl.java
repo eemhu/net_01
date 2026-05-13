@@ -46,15 +46,19 @@
 package com.teragrep.net_01.channel.context;
 
 import com.teragrep.buf_01.buffer.lease.MemorySegmentLeaseStub;
+import com.teragrep.buf_01.buffer.lease.OpenableLease;
 import com.teragrep.buf_01.buffer.pool.OpeningPool;
 import com.teragrep.buf_01.buffer.supply.ArenaMemorySegmentLeaseSupplier;
 import com.teragrep.net_01.channel.socket.Socket;
+import com.teragrep.poj_01.pool.Pool;
+import com.teragrep.poj_01.pool.PoolableSupplier;
 import com.teragrep.poj_01.pool.UnboundPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.spi.AbstractSelectableChannel;
@@ -76,6 +80,7 @@ final class EstablishedContextImpl implements EstablishedContext {
     private final InterestOps interestOps;
 
     private final OpeningPool memorySegmentLeasePool;
+    private final PoolableSupplier<Pool<OpenableLease<MemorySegment>>, OpenableLease<MemorySegment>> poolableSupplier;
     private final Ingress ingress;
     private final Egress egress;
 
@@ -84,8 +89,9 @@ final class EstablishedContextImpl implements EstablishedContext {
         this.executorService = executorService;
         this.socket = socket;
 
+        this.poolableSupplier = new ArenaMemorySegmentLeaseSupplier(Arena.ofShared(), 4096);
         this.memorySegmentLeasePool = new OpeningPool(
-                new UnboundPool<>(new ArenaMemorySegmentLeaseSupplier(Arena.ofShared(), 4096), new MemorySegmentLeaseStub())
+                new UnboundPool<>(poolableSupplier, new MemorySegmentLeaseStub())
         );
         this.ingress = new IngressImpl(this, this.memorySegmentLeasePool);
         this.egress = new EgressImpl(this);
@@ -118,6 +124,7 @@ final class EstablishedContextImpl implements EstablishedContext {
         }
 
         memorySegmentLeasePool.close();
+        poolableSupplier.close();
     }
 
     @Override
