@@ -87,7 +87,7 @@ public final class EventLoop implements AutoCloseable, Runnable {
      * @param context to register
      */
     public void register(Context context) {
-        LOGGER.info("EventLoop.Register: {}", context);
+        LOGGER.debug("EventLoop.Register: {}", context);
         pendingContextRegistrations.add(context);
         wakeup();
     }
@@ -122,10 +122,10 @@ public final class EventLoop implements AutoCloseable, Runnable {
 
         registerPendingRegistrations();
 
-        LOGGER.info("readyKeys <{}>", readyKeys);
+        LOGGER.debug("readyKeys <{}>", readyKeys);
 
         Set<SelectionKey> selectionKeys = selector.selectedKeys();
-        LOGGER.info("selectionKeys <{}> ", selectionKeys);
+        LOGGER.debug("selectionKeys <{}> ", selectionKeys);
         for (SelectionKey selectionKey : selectionKeys) {
             try {
                 if (LOGGER.isDebugEnabled()) {
@@ -195,7 +195,7 @@ public final class EventLoop implements AutoCloseable, Runnable {
     @Override
     public void run() {
         try {
-            LOGGER.info("Started");
+            LOGGER.debug("Started");
             while (!stop.get()) {
                 poll();
             }
@@ -206,7 +206,7 @@ public final class EventLoop implements AutoCloseable, Runnable {
         finally {
             close();
         }
-        LOGGER.info("Stopped");
+        LOGGER.debug("Stopped");
     }
 
     public void stop() {
