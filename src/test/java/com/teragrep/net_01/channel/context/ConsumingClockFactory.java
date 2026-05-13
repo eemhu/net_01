@@ -43,47 +43,21 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.net_01.channel.buffer;
+package com.teragrep.net_01.channel.context;
 
-import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.function.Consumer;
 
-/**
- * BufferLease is a decorator for {@link BufferContainer} with reference counter
- */
-public interface BufferLease {
+public final class ConsumingClockFactory implements ClockFactory {
 
-    /**
-     * @return identity of the decorated {@link BufferContainer}.
-     */
-    long id();
+    private final Consumer<List<Byte>> messageConsumer;
 
-    /**
-     * @return current reference count.
-     */
-    long refs();
+    public ConsumingClockFactory(Consumer<List<Byte>> messageConsumer) {
+        this.messageConsumer = messageConsumer;
+    }
 
-    /**
-     * @return encapsulated buffer of the {@link BufferContainer}.
-     */
-    ByteBuffer buffer();
-
-    /**
-     * Add reference, throws {@link IllegalStateException} if lease has expired.
-     */
-    void addRef() throws IllegalStateException;
-
-    /**
-     * Remove reference, throws {@link IllegalStateException} if lease has expired.
-     */
-    void removeRef() throws IllegalStateException;
-
-    /**
-     * @return status of the lease, {@code true} indicates that the lease has expired.
-     */
-    boolean isTerminated();
-
-    /**
-     * @return is this a stub implementation.
-     */
-    boolean isStub();
+    @Override
+    public Clock create(final EstablishedContext establishedContext) {
+        return new ConsumingClock(establishedContext, messageConsumer);
+    }
 }

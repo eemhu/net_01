@@ -43,31 +43,37 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.net_01.channel.buffer;
+package com.teragrep.net_01.channel.context;
 
-import java.nio.ByteBuffer;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
 
-/**
- * Stub implementation of the {@link BufferContainer}.
- */
-final class BufferContainerStub implements BufferContainer {
+import java.lang.foreign.MemorySegment;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 
-    BufferContainerStub() {
+public final class ConsumingClock implements Clock {
 
+    private final EstablishedContext ctx;
+    private final Consumer<List<Byte>> messageConsumer;
+
+    public ConsumingClock(final EstablishedContext ctx, final Consumer<List<Byte>> messageConsumer) {
+        this.ctx = ctx;
+        this.messageConsumer = messageConsumer;
     }
 
     @Override
-    public long id() {
-        throw new IllegalStateException("BufferContainerStub does not have an id!");
+    public void advance(TrackedLease<MemorySegment> lease) {
+        final List<Byte> bytes = new ArrayList<>();
+        while (lease.hasNext()) {
+            bytes.add(lease.next());
+        }
+
+        messageConsumer.accept(bytes);
     }
 
     @Override
-    public ByteBuffer buffer() {
-        throw new IllegalStateException("BufferContainerStub does not allow access to the buffer!");
-    }
-
-    @Override
-    public boolean isStub() {
-        return true;
+    public void close() {
+        // no-op
     }
 }

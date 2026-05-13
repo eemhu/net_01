@@ -43,19 +43,13 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.net_01.channel.buffer.writable;
+package com.teragrep.net_01.channel.socket;
 
-import java.io.Closeable;
-import java.nio.ByteBuffer;
+import com.teragrep.buf_01.buffer.lease.Lease;
 
-public interface Writeable extends Closeable {
+public interface IOResult<T extends Lease<?>> {
 
-    @Override
-    void close();
+    public abstract long bytes();
 
-    ByteBuffer[] buffers();
-
-    boolean hasRemaining();
-
-    boolean isStub();
+    public abstract T[] leases();
 }

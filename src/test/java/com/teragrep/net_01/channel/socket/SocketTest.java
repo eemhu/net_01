@@ -1,0 +1,170 @@
+/*
+ * Java Zero Copy Networking Library net_01
+ * Copyright (C) 2024 Suomen Kanuuna Oy
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *
+ * Additional permission under GNU Affero General Public License version 3
+ * section 7
+ *
+ * If you modify this Program, or any covered work, by linking or combining it
+ * with other code, such other code is not for that reason alone subject to any
+ * of the requirements of the GNU Affero GPL version 3 as long as this Program
+ * is the same Program as licensed from Suomen Kanuuna Oy without any additional
+ * modifications.
+ *
+ * Supplemented terms under GNU Affero General Public License version 3
+ * section 7
+ *
+ * Origin of the software must be attributed to Suomen Kanuuna Oy. Any modified
+ * versions must be marked as "Modified version of" The Program.
+ *
+ * Names of the licensors and authors may not be used for publicity purposes.
+ *
+ * No rights are granted for use of trade names, trademarks, or service marks
+ * which are in The Program if any.
+ *
+ * Licensee must indemnify licensors and authors for any liability that these
+ * contractual assumptions impose on licensors and authors.
+ *
+ * To the extent this program is licensed as part of the Commercial versions of
+ * Teragrep, the applicable Commercial License may apply to this file if you as
+ * a licensee so wish it.
+ */
+package com.teragrep.net_01.channel.socket;
+
+import com.teragrep.buf_01.buffer.lease.MemorySegmentLeaseStub;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
+import com.teragrep.buf_01.buffer.pool.get.LeaseMultiGet;
+import com.teragrep.buf_01.buffer.pool.OpeningPool;
+import com.teragrep.buf_01.buffer.pool.get.TrackedLeaseMultiGet;
+import com.teragrep.buf_01.buffer.supply.ArenaMemorySegmentLeaseSupplier;
+import com.teragrep.net_01.channel.StringToLease;
+import com.teragrep.poj_01.pool.UnboundPool;
+import org.junit.jupiter.api.*;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.net.InetSocketAddress;
+import java.nio.channels.ServerSocketChannel;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+public final class SocketTest {
+
+    private OpeningPool pool;
+
+    @BeforeAll
+    void beforeAll() {
+        this.pool = new OpeningPool(
+                new UnboundPool<>(new ArenaMemorySegmentLeaseSupplier(Arena.ofShared(), 128), new MemorySegmentLeaseStub())
+        );
+    }
+
+    @AfterAll
+    void afterAll() {
+        this.pool.close();
+    }
+
+    @Test
+    void testPlainSocketConnection() {
+        Assertions.assertDoesNotThrow(() -> {
+            // Create ServerSocketChannel and bind it to port=9090
+            final ServerSocketChannel socketCh = ServerSocketChannel.open();
+            socketCh.bind(new InetSocketAddress(9090));
+
+            // Init client
+            final java.net.Socket clientSocket = new java.net.Socket("localhost", 9090);
+
+            // Init PlainSocket
+            final Socket socket = new PlainSocket(socketCh.accept());
+
+            clientSocket.close();
+            socketCh.close();
+            socket.close();
+        });
+    }
+
+    @Test
+    void testPlainSocketWrite() {
+        Assertions.assertDoesNotThrow(() -> {
+            // Create ServerSocketChannel and bind it to port=9090
+            final ServerSocketChannel socketCh = ServerSocketChannel.open();
+            socketCh.bind(new InetSocketAddress(9090));
+
+            // Init client
+            final java.net.Socket clientSocket = new java.net.Socket("localhost", 9090);
+            final BufferedReader in = new BufferedReader(
+                    new InputStreamReader(Assertions.assertDoesNotThrow(clientSocket::getInputStream))
+            );
+
+            // Init PlainSocket
+            final Socket socket = new PlainSocket(socketCh.accept());
+
+            socket.write(new StringToLease("helloWorld\n", pool).toCollection().leases());
+
+            final String readLine = in.readLine();
+
+            Assertions.assertEquals("helloWorld", readLine);
+
+            clientSocket.close();
+            socketCh.close();
+            socket.close();
+        });
+    }
+
+    @Test
+    void testPlainSocketRead() {
+        Assertions.assertDoesNotThrow(() -> {
+            // Create ServerSocketChannel and bind it to port=9090
+            ServerSocketChannel socketCh = ServerSocketChannel.open();
+            socketCh.bind(new InetSocketAddress(9090));
+
+            // Init client
+            java.net.Socket clientSocket = new java.net.Socket("localhost", 9090);
+            final PrintWriter out = new PrintWriter(Assertions.assertDoesNotThrow(clientSocket::getOutputStream), true);
+
+            // Init PlainSocket
+            Socket socket = new PlainSocket(socketCh.accept());
+
+            out.println("worldHello");
+
+            TrackedLease<MemorySegment>[] bufs = emptyBuffers(10);
+            ReadResult res = socket.read(bufs);
+
+            Assertions.assertEquals("worldHello\n", bufferToString(res.leases()));
+
+            clientSocket.close();
+            socketCh.close();
+            socket.close();
+        });
+    }
+
+    private String bufferToString(final TrackedLease<MemorySegment>[] leases) {
+        final StringBuilder stringBuilder = new StringBuilder();
+        for (final TrackedLease<MemorySegment> buf : leases) {
+            while (buf.hasNext()) {
+                stringBuilder.append((char) buf.next());
+            }
+        }
+        return stringBuilder.toString();
+    }
+
+    private TrackedLease<MemorySegment>[] emptyBuffers(final int bytes) {
+        return new TrackedLeaseMultiGet(new LeaseMultiGet(pool)).getAsArray(bytes);
+    }
+}

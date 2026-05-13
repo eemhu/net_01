@@ -43,56 +43,24 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.net_01.channel.buffer.writable;
+package com.teragrep.net_01.channel.context;
 
-import com.teragrep.net_01.channel.context.EstablishedContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.teragrep.buf_01.buffer.pool.OpeningPool;
 
-import java.nio.ByteBuffer;
+import java.util.function.Consumer;
 
-/**
- * Closes a connection at close()
- */
-public final class WriteableClosure implements Writeable {
+public final class EchoingClockFactory implements ClockFactory {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(WriteableClosure.class);
+    private final Consumer<String> consumer;
+    private final OpeningPool pool;
 
-    private final Writeable writeable;
-    private final EstablishedContext establishedContext;
-
-    public WriteableClosure(Writeable writeable, EstablishedContext establishedContext) {
-        this.writeable = writeable;
-        this.establishedContext = establishedContext;
+    public EchoingClockFactory(final Consumer<String> consumer, final OpeningPool pool) {
+        this.consumer = consumer;
+        this.pool = pool;
     }
 
     @Override
-    public void close() {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER
-                    .debug(
-                            "Sent command <{}>, Closing connection to  PeerAddress <{}> PeerPort <{}>", "serverclose",
-                            establishedContext.socket().getTransportInfo().getPeerAddress(),
-                            establishedContext.socket().getTransportInfo().getPeerPort()
-                    );
-        }
-        establishedContext.close();
-        writeable.close();
+    public Clock create(final EstablishedContext establishedContext) {
+        return new EchoingClock(establishedContext, consumer, pool);
     }
-
-    @Override
-    public ByteBuffer[] buffers() {
-        return writeable.buffers();
-    }
-
-    @Override
-    public boolean hasRemaining() {
-        return writeable.hasRemaining();
-    }
-
-    @Override
-    public boolean isStub() {
-        return writeable.isStub();
-    }
-
 }

@@ -43,27 +43,29 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.net_01.channel.buffer;
+package com.teragrep.net_01.channel.socket;
 
-import java.nio.ByteBuffer;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
 
-/**
- * BufferContainer is a decorator for {@link ByteBuffer} with an id.
- */
-public interface BufferContainer {
+import java.lang.foreign.MemorySegment;
 
-    /**
-     * @return id of the buffer
-     */
-    long id();
+public class WrittenResult implements IOResult<TrackedLease<MemorySegment>> {
 
-    /**
-     * @return encapsulated {@link ByteBuffer}.
-     */
-    ByteBuffer buffer();
+    private final long bytesWritten;
+    private final TrackedLease<MemorySegment>[] leases;
 
-    /**
-     * @return is this a stub implementation.
-     */
-    boolean isStub();
+    public WrittenResult(final long bytesWritten, final TrackedLease<MemorySegment>[] leases) {
+        this.bytesWritten = bytesWritten;
+        this.leases = leases;
+    }
+
+    @Override
+    public long bytes() {
+        return bytesWritten;
+    }
+
+    @Override
+    public TrackedLease<MemorySegment>[] leases() {
+        return leases;
+    }
 }

@@ -43,45 +43,29 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.net_01.channel.buffer;
+package com.teragrep.net_01.channel.socket;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
 
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 
-/**
- * Decorator for {@link ByteBuffer} with a synchronized access for it.
- */
-final class BufferContainerImpl implements BufferContainer {
+public final class ReadResult implements IOResult<TrackedLease<MemorySegment>> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(BufferContainerImpl.class);
-    private final long id;
-    private final ByteBuffer buffer;
+    private final long bytesRead;
+    private final TrackedLease<MemorySegment>[] leases;
 
-    BufferContainerImpl(long id, ByteBuffer buffer) {
-        this.id = id;
-        this.buffer = buffer;
+    public ReadResult(final long bytesRead, final TrackedLease<MemorySegment>[] leases) {
+        this.bytesRead = bytesRead;
+        this.leases = leases;
     }
 
     @Override
-    public long id() {
-        return id;
+    public long bytes() {
+        return bytesRead;
     }
 
     @Override
-    public synchronized ByteBuffer buffer() {
-        return buffer;
-    }
-
-    @Override
-    public String toString() {
-        return "BufferContainer{" + "buffer=" + buffer + ", id=" + id + '}';
-    }
-
-    @Override
-    public boolean isStub() {
-        LOGGER.debug("id <{}>", id);
-        return false;
+    public TrackedLease<MemorySegment>[] leases() {
+        return leases;
     }
 }

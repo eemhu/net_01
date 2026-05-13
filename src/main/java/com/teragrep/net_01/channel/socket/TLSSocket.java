@@ -45,9 +45,12 @@
  */
 package com.teragrep.net_01.channel.socket;
 
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
+import com.teragrep.buf_01.buffer.lease.TrackedMemorySegmentLease;
 import tlschannel.TlsChannel;
 
 import java.io.IOException;
+import java.lang.foreign.MemorySegment;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 
@@ -65,13 +68,57 @@ final class TLSSocket implements Socket {
     }
 
     @Override
-    public long read(ByteBuffer[] dsts) throws IOException {
-        return tlsChannel.read(dsts);
+    public ReadResult read(final TrackedLease<MemorySegment>[] dsts) throws IOException {
+        final int size = dsts.length;
+        final TrackedLease<MemorySegment>[] rv = new TrackedMemorySegmentLease[size];
+        final ByteBuffer[] byteBuffers = new ByteBuffer[size];
+
+        for (int i = 0; i < size; i++) {
+            byteBuffers[i] = dsts[i].leasedObject().asByteBuffer();
+        }
+
+        final long readBytes = tlsChannel.read(byteBuffers);
+
+        for (int i = 0; i < size; i++) {
+            final TrackedLease<MemorySegment> lease = dsts[i];
+            final ByteBuffer byteBuffer = byteBuffers[i];
+
+            lease.position(byteBuffer.position());
+            lease.limit(byteBuffer.limit());
+
+            lease.flip();
+
+            rv[i] = lease;
+        }
+
+        return new ReadResult(readBytes, rv);
     }
 
     @Override
-    public long write(ByteBuffer[] dsts) throws IOException {
-        return tlsChannel.write(dsts);
+    public WrittenResult write(final TrackedLease<MemorySegment>[] dsts) throws IOException {
+        final int size = dsts.length;
+        final ByteBuffer[] buffersToWrite = new ByteBuffer[size];
+        final TrackedLease<MemorySegment>[] rv = new TrackedMemorySegmentLease[size];
+
+        for (int i = 0; i < size; i++) {
+            buffersToWrite[i] = dsts[i].leasedObject().asByteBuffer();
+        }
+
+        final long bytesWritten = tlsChannel.write(buffersToWrite);
+
+        for (int i = 0; i < size; i++) {
+            final TrackedLease<MemorySegment> lease = dsts[i];
+            final ByteBuffer byteBuffer = buffersToWrite[i];
+
+            lease.position(byteBuffer.position());
+            lease.limit(byteBuffer.limit());
+
+            lease.flip();
+
+            rv[i] = lease;
+        }
+
+        return new WrittenResult(bytesWritten, rv);
     }
 
     @Override

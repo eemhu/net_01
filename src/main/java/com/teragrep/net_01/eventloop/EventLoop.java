@@ -87,11 +87,13 @@ public final class EventLoop implements AutoCloseable, Runnable {
      * @param context to register
      */
     public void register(Context context) {
+        LOGGER.debug("EventLoop.Register: {}", context);
         pendingContextRegistrations.add(context);
         wakeup();
     }
 
     private void registerPendingRegistrations() {
+        LOGGER.debug("register pending regs");
         while (true) {
             Context context = pendingContextRegistrations.poll();
             if (context != null) {

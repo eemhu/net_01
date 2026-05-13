@@ -48,7 +48,6 @@ package com.teragrep.net_01.channel.socket;
 import tlschannel.TlsChannel;
 
 import javax.net.ssl.SSLPeerUnverifiedException;
-import javax.security.cert.X509Certificate;
 import java.security.Principal;
 import java.security.cert.Certificate;
 
@@ -81,8 +80,8 @@ final class EncryptionInfoTLS implements EncryptionInfo {
     }
 
     @Override
-    public X509Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
-        return tlsChannel.getSslEngine().getSession().getPeerCertificateChain();
+    public Certificate[] getPeerCertificateChain() throws SSLPeerUnverifiedException {
+        return tlsChannel.getSslEngine().getSession().getPeerCertificates();
     }
 
     @Override

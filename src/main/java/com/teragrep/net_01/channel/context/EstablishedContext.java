@@ -45,12 +45,11 @@
  */
 package com.teragrep.net_01.channel.context;
 
-import com.teragrep.net_01.channel.buffer.writable.Writeable;
 import com.teragrep.net_01.channel.socket.Socket;
 
 /**
  * Established type of {@link Context}. It produces ingress data into the provided via {@link Ingress}. Egress data can
- * be written via {@link Egress#accept(Writeable)}.
+ * be written via {@link Egress}.
  */
 public interface EstablishedContext extends Context {
 

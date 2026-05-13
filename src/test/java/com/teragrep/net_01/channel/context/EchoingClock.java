@@ -43,52 +43,46 @@
  * Teragrep, the applicable Commercial License may apply to this file if you as
  * a licensee so wish it.
  */
-package com.teragrep.net_01.channel.buffer.writable;
+package com.teragrep.net_01.channel.context;
 
-import com.teragrep.net_01.channel.buffer.BufferLease;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
+import com.teragrep.buf_01.buffer.lease.collection.TrackedLeaseCollection;
+import com.teragrep.buf_01.buffer.pool.OpeningPool;
+import com.teragrep.net_01.channel.StringToLease;
 
-import java.nio.ByteBuffer;
-import java.util.List;
+import java.lang.foreign.MemorySegment;
+import java.util.function.Consumer;
 
-public final class WriteableLeaseful implements Writeable {
+public final class EchoingClock implements Clock {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(WriteableLeaseful.class);
+    private final EstablishedContext ctx;
+    private final Consumer<String> consumer;
+    private final OpeningPool pool;
 
-    private final Writeable writeable;
-    private final List<BufferLease> leases;
-
-    public WriteableLeaseful(Writeable writeable, List<BufferLease> leases) {
-        this.writeable = writeable;
-        this.leases = leases;
+    public EchoingClock(final EstablishedContext ctx, final Consumer<String> consumer, final OpeningPool pool) {
+        this.ctx = ctx;
+        this.consumer = consumer;
+        this.pool = pool;
     }
 
     @Override
-    public ByteBuffer[] buffers() {
-        return writeable.buffers();
-    }
+    public void advance(final TrackedLease<MemorySegment> bufferLease) {
+        final StringBuilder stringBuilder = new StringBuilder();
+        while (bufferLease.hasNext()) {
+            final char c = (char) bufferLease.next();
+            stringBuilder.append(c);
+        }
 
-    @Override
-    public boolean hasRemaining() {
-        return writeable.hasRemaining();
-    }
+        final String str = stringBuilder.toString();
 
-    @Override
-    public boolean isStub() {
-        return writeable.isStub();
+        final TrackedLeaseCollection<MemorySegment> c = new StringToLease(str, pool).toCollection();
+        ctx.egress().accept(c);
+
+        consumer.accept(str);
     }
 
     @Override
     public void close() {
-        writeable.close();
-        // TODO subleases for fragments
-        for (BufferLease bufferLease : leases) {
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("releasing id <{}> with refs <{}>", bufferLease.id(), bufferLease.refs());
-            }
-            bufferLease.removeRef();
-        }
+        // no-op
     }
-
 }

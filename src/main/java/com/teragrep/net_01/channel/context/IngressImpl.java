@@ -45,16 +45,22 @@
  */
 package com.teragrep.net_01.channel.context;
 
-import com.teragrep.net_01.channel.buffer.BufferLease;
-import com.teragrep.net_01.channel.buffer.BufferLeasePool;
+import com.teragrep.buf_01.buffer.lease.OpenableLease;
+import com.teragrep.buf_01.buffer.lease.TrackedLease;
+import com.teragrep.buf_01.buffer.pool.get.LeaseMultiGet;
+import com.teragrep.buf_01.buffer.pool.get.TrackedLeaseMultiGet;
+import com.teragrep.net_01.channel.socket.ReadResult;
+import com.teragrep.poj_01.pool.Pool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tlschannel.NeedsReadException;
 import tlschannel.NeedsWriteException;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.lang.foreign.MemorySegment;
 import java.nio.channels.CancelledKeyException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -68,24 +74,24 @@ final class IngressImpl implements Ingress {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(IngressImpl.class);
     private final EstablishedContextImpl establishedContext;
-    private final BufferLeasePool bufferLeasePool;
+    private final Pool<OpenableLease<MemorySegment>> memorySegmentLeasePool;
 
-    private final LinkedList<BufferLease> activeBuffers;
+    private final List<TrackedLease<MemorySegment>> activeBuffers;
     private final Lock lock;
     // tls
     public final AtomicBoolean needWrite;
 
     private final List<Clock> interestedClocks;
 
-    IngressImpl(EstablishedContextImpl establishedContext, BufferLeasePool bufferLeasePool) {
+    IngressImpl(EstablishedContextImpl establishedContext, Pool<OpenableLease<MemorySegment>> memorySegmentLeasePool) {
         this.establishedContext = establishedContext;
-        this.bufferLeasePool = bufferLeasePool;
+        this.memorySegmentLeasePool = memorySegmentLeasePool;
 
-        this.activeBuffers = new LinkedList<>();
+        this.activeBuffers = Collections.synchronizedList(new LinkedList<>());
         this.lock = new ReentrantLock();
         this.needWrite = new AtomicBoolean();
 
-        this.interestedClocks = new LinkedList<>();
+        this.interestedClocks = Collections.synchronizedList(new LinkedList<>());
     }
 
     @Override
@@ -109,8 +115,7 @@ final class IngressImpl implements Ingress {
                 boolean continueReading = true;
                 while (!activeBuffers.isEmpty()) {
                     // IMPORTANT: current tls implementation will skip bytes if BufferLeases are not fully consumed.
-                    BufferLease bufferLease = activeBuffers.removeFirst();
-                    bufferLease.addRef();
+                    TrackedLease<MemorySegment> bufferLease = activeBuffers.removeFirst();
                     LOGGER
                             .debug(
                                     "submitting buffer <{}> from activeBuffers <{}> to relpFrame", bufferLease,
@@ -120,12 +125,6 @@ final class IngressImpl implements Ingress {
                     if (!interestedClocks.isEmpty()) {
                         for (Clock clock : interestedClocks) {
                             clock.advance(bufferLease);
-
-                            if (bufferLease.buffer().hasRemaining()) {
-                                // shared buffer between clocks, ready for another
-                                bufferLease.addRef();
-                            }
-
                         }
                     }
 
@@ -134,19 +133,19 @@ final class IngressImpl implements Ingress {
                     }
 
                     LOGGER.debug("clock returned continueReading <{}>", continueReading);
-                    if (bufferLease.buffer().hasRemaining()) {
+
+                    if (bufferLease.hasNext()) {
                         // return back as it has some remaining
                         LOGGER.debug("pushBack bufferLease id <{}>", bufferLease.id());
-                        activeBuffers.push(bufferLease);
+                        activeBuffers.addFirst(bufferLease);
                         if (LOGGER.isDebugEnabled()) {
                             LOGGER
                                     .debug(
-                                            "buffer.buffer <{}>, buffer.buffer().hasRemaining() <{}> returned it to activeBuffers <{}>",
-                                            bufferLease.buffer(), bufferLease.buffer().hasRemaining(), activeBuffers
+                                            "buffer.leasedObject <{}>, buffer.hasNext <{}> returned it to activeBuffers <{}>",
+                                            bufferLease.leasedObject(), bufferLease.hasNext(), activeBuffers
                                     );
                         }
                     }
-                    bufferLease.removeRef();
                     if (!continueReading) {
                         break;
                     }
@@ -230,39 +229,17 @@ final class IngressImpl implements Ingress {
     }
 
     private long readData() throws IOException {
-        long readBytes = 0;
+        final TrackedLease<MemorySegment>[] bufferLeases = new TrackedLeaseMultiGet(
+                new LeaseMultiGet(memorySegmentLeasePool)
+        ).getAsArray(4);
 
-        List<BufferLease> bufferLeases = bufferLeasePool.take(4);
+        final ReadResult result = establishedContext.socket().read(bufferLeases);
 
-        List<ByteBuffer> byteBufferList = new LinkedList<>();
-        for (BufferLease bufferLease : bufferLeases) {
-            if (bufferLease.isStub()) {
-                continue;
-            }
-            byteBufferList.add(bufferLease.buffer());
-        }
-        ByteBuffer[] byteBufferArray = byteBufferList.toArray(new ByteBuffer[0]);
+        activeBuffers.addAll(Arrays.asList(result.leases()));
 
-        readBytes = establishedContext.socket().read(byteBufferArray);
+        LOGGER.debug("establishedContext.read got <{}> bytes from socket", result.bytes());
 
-        activateBuffers(bufferLeases);
-
-        LOGGER.debug("establishedContext.read got <{}> bytes from socket", readBytes);
-
-        return readBytes;
-    }
-
-    private void activateBuffers(List<BufferLease> bufferLeases) {
-        for (BufferLease bufferLease : bufferLeases) {
-            if (bufferLease.buffer().position() != 0) {
-                bufferLease.buffer().flip();
-                activeBuffers.add(bufferLease);
-            }
-            else {
-                // unused buffer, releasing back to pool
-                bufferLease.removeRef();
-            }
-        }
+        return result.bytes();
     }
 
     public AtomicBoolean needWrite() {

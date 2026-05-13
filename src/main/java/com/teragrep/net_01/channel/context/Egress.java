@@ -45,23 +45,24 @@
  */
 package com.teragrep.net_01.channel.context;
 
-import com.teragrep.net_01.channel.buffer.writable.Writeable;
+import com.teragrep.buf_01.buffer.lease.collection.TrackedLeaseCollection;
 
+import java.lang.foreign.MemorySegment;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 /**
  * Egress is handled by this
  */
-public interface Egress extends Consumer<Writeable>, Runnable {
+public interface Egress extends Consumer<TrackedLeaseCollection<MemorySegment>>, Runnable {
 
     /**
      * Sends asynchronously the writeable provided. Implementation is required to be thread-safe.
      * 
-     * @param writeable to send
+     * @param coll to send
      */
     @Override
-    void accept(Writeable writeable);
+    void accept(TrackedLeaseCollection<MemorySegment> coll);
 
     @Override
     void run();
